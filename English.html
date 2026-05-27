@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER RELIC - 英語RPG Ver.6.0</title>
+    <style>
+        /* === ブライト・サイバースタイル (白＆青基調) === */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        body {
+            background-color: #000a14;
+            color: #e0f7fa;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            background-image: 
+                linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        #game-app {
+            width: 850px;
+            height: 660px;
+            position: relative;
+            background: rgba(0, 15, 30, 0.95);
+            border: 2px solid #00e5ff;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 30px;
+        }
+        
+        .screen.active { display: flex; }
+
+        .cyber-frame {
+            border: 1px solid #00e5ff;
+            background: rgba(0, 229, 255, 0.05);
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.1);
+        }
+        .cyber-frame.boss-alert {
+            border-color: #ff3366;
+            background: rgba(255, 51, 102, 0.05);
+            box-shadow: inset 0 0 20px rgba(255, 51, 102, 0.2);
+        }
+
+        .btn {
+            background: #001a33;
+            color: #00e5ff;
+            border: 2px solid #00e5ff;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: inherit;
+            margin: 5px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            transition: all 0.2s ease;
+        }
+        .btn:hover:not(:disabled) {
+            background: #00e5ff;
+            color: #000;
+            box-shadow: 0 0 15px #00e5ff;
+        }
+        .btn:disabled {
+            border-color: #444;
+            color: #666;
+            background: #111;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn.btn-danger {
+            color: #ff3366;
+            border-color: #ff3366;
+        }
+        .btn.btn-danger:hover:not(:disabled) {
+            background: #ff3366;
+            color: #fff;
+            box-shadow: 0 0 15px #ff3366;
+        }
+
+        .title-container { text-align: center; margin-top: 100px; }
+        .title-main { font-size: 64px; color: #ffffff; text-shadow: 0 0 20px #00e5ff; margin: 0; letter-spacing: 12px; }
+        .title-sub { font-size: 18px; color: #00e5ff; letter-spacing: 8px; margin-top: 10px; }
+
+        #enemy-container { height: 160px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
+        
+        .enemy-minion {
+            width: 60px; height: 60px; border: 3px solid #00e5ff; transform: rotate(45deg);
+            background: rgba(0, 229, 255, 0.1);
+            position: relative; animation: Float 2s ease-in-out infinite alternate;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+        }
+        .enemy-boss {
+            width: 90px; height: 90px; border: 4px double #ff3366; transform: rotate(45deg);
+            background: rgba(255, 51, 102, 0.1);
+            position: relative; animation: BossSpin 5s linear infinite;
+            box-shadow: 0 0 30px rgba(255, 51, 102, 0.6);
+        }
+        .enemy-boss::before {
+            content: ''; position: absolute; top: 20px; left: 20px; width: 42px; height: 42px;
+            border: 3px solid #ffffff; transform: rotate(30deg);
+        }
+
+        @keyframes Float { 0% { transform: rotate(45deg) translateY(0px); } 100% { transform: rotate(45deg) translateY(-15px); } }
+        @keyframes BossSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #battle-area { flex: 1; border: 2px solid #00e5ff; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 20, 40, 0.6); padding: 10px; }
+        
+        #typing-container { font-size: 54px; font-weight: bold; letter-spacing: 8px; display: none; text-align: center; }
+        .typed { color: #00e5ff; text-shadow: 0 0 12px #00e5ff; }
+        .untyped { color: #ffffff; text-shadow: 2px 2px 4px #000; }
+
+        #classify-container { display: none; text-align: center; }
+        #classify-word { font-size: 54px; font-weight: bold; letter-spacing: 6px; margin-bottom: 30px; color: #ffffff; text-shadow: 0 0 15px #00e5ff; }
+
+        /* 新規追加：穴埋め問題用のスタイル */
+        #fill-blank-container { display: none; text-align: center; width: 100%; }
+        #fill-sentence { font-size: 28px; font-weight: bold; margin-bottom: 30px; color: #ffffff; text-shadow: 0 0 15px #00e5ff; word-wrap: break-word; padding: 0 20px; }
+        #fill-choices { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+
+        #message-box { height: 100px; border: 2px solid #00e5ff; padding: 15px; font-size: 18px; line-height: 1.6; background: #000; color: #ffffff; font-weight: bold; overflow-y: auto; }
+
+        #loading-bar-container { width: 80%; height: 24px; border: 3px solid #00e5ff; margin: 30px auto; position: relative; background: #001a33; }
+        #loading-bar { width: 0%; height: 100%; background: #00e5ff; box-shadow: 0 0 15px #00e5ff; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .panel { border: 1px solid #00e5ff; padding: 20px; background: rgba(0, 229, 255, 0.05); display: flex; flex-direction: column; justify-content: space-between; }
+        .panel-title { font-size: 20px; font-weight: bold; color: #ffffff; margin-bottom: 10px; }
+        .panel-desc { font-size: 14px; color: #aaddff; margin-bottom: 20px; height: 40px; line-height: 1.4; }
+
+        #audio-trigger { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100000; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="audio-trigger" onclick="startSystem()">
+        <div style="text-align: center; border: 2px solid #00e5ff; padding: 50px; background: #000; box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);">
+            <p style="font-size: 16px; letter-spacing: 6px; color: #00e5ff; margin: 0 0 15px 0;">CYBER RELIC - BLUE PROTOCOL</p>
+            <h2 style="letter-spacing: 8px; margin: 0; color: #ffffff; animation: blink 1.5s infinite;">[ CLICK TO ENGAGE ]</h2>
+        </div>
+    </div>
+
+    <div id="game-app">
+        <div id="screen-title" class="screen">
+            <div class="title-container">
+                <h1 class="title-main">CYBER RELIC</h1>
+                <div class="title-sub">// ANCIENT ENGLISH TERMINAL //</div>
+                <div style="margin-top: 120px; display: flex; justify-content: center; gap: 20px;">
+                    <button class="btn" style="font-size: 20px; padding: 15px 40px;" onclick="startNewGame()">NEW SYSTEM<br><span style="font-size:12px;">(初めから)</span></button>
+                    <button class="btn" style="font-size: 20px; padding: 15px 40px;" onclick="loadGameFromTitle()">LOAD SYSTEM<br><span style="font-size:12px;">(続きから)</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-town" class="screen">
+            <div class="cyber-frame" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; letter-spacing: 4px; font-size: 28px; color: #ffffff;">MAIN TERMINAL</h2>
+                    <div id="town-progress" style="color: #00e5ff; font-size: 16px; margin-top: 8px;">NODE: --</div>
+                </div>
+                <div style="text-align: right; font-size: 18px;">
+                    CREDIT: <span id="town-gold" style="color: #00e5ff; font-weight: bold;">0</span> CR<br>
+                    SYSTEM HP: <span id="town-hp" style="color: #ff3366; font-weight: bold;">0 / 0</span>
+                </div>
+            </div>
+            
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px dashed #00e5ff; margin-bottom: 20px; background: rgba(0, 229, 255, 0.02);">
+                <div style="margin-bottom: 30px; font-size: 18px; color: #aaddff; letter-spacing: 2px;">SELECT COMMAND</div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                    <button class="btn btn-danger" id="btn-dive" onclick="prepareBattle()">GATE DIVE (EXPLORE)</button>
+                    <button class="btn" onclick="changeScreen('screen-shop')">BLACK MARKET (SHOP)</button>
+                    <button class="btn" onclick="changeScreen('screen-skills')">KERNEL MATRIX (SKILLS)</button>
+                    <button class="btn" style="border-color: #ffff00; color: #ffff00;" onclick="manualSave()">SYSTEM SAVE (セーブ)</button>
+                    <button class="btn" style="border-color: #888888; color: #888888;" onclick="changeScreen('screen-title')">LOGOUT (タイトルへ)</button>
+                </div>
+            </div>
+            <div style="font-size: 14px; color: #ff3366; text-align: right; font-weight: bold;">[MANUAL SAVE REQUIRED] セーブは手動で行ってください</div>
+        </div>
+
+        <div id="screen-loading" class="screen" style="justify-content: center;">
+            <h2 style="color: #ffffff; text-align: center; font-size: 32px; letter-spacing: 10px; margin-top: 80px;">NOW DIVING...</h2>
+            <div id="loading-bar-container">
+                <div id="loading-bar"></div>
+            </div>
+            <div style="border: 1px solid #00e5ff; padding: 20px; background: #001a33; margin-top: 40px;">
+                <div style="color: #00e5ff; font-weight: bold; margin-bottom: 10px; font-size: 18px;">[ TACTICAL HINT ]</div>
+                <div id="loading-hint" style="color: #ffffff; font-size: 16px; line-height: 1.5;"></div>
+            </div>
+        </div>
+
+        <div id="screen-shop" class="screen">
+            <div class="cyber-frame" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="margin: 0; letter-spacing: 3px; color: #ffffff;">BLACK MARKET</h2>
+                <div style="font-size: 18px;">CREDIT: <span id="shop-gold" style="color: #00e5ff;">0</span> CR</div>
+            </div>
+            <div class="grid-2" style="flex: 1;">
+                <div class="panel">
+                    <div>
+                        <div class="panel-title">HP INJECTION</div>
+                        <div class="panel-desc">破損データを修復し、システムHPを全回復させます。</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color:#ffffff; font-weight: bold; font-size: 18px;">50 CR</span>
+                        <button class="btn" onclick="buyShopItem('heal')">EXECUTE</button>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div>
+                        <div class="panel-title">CAPACITY EXTEND</div>
+                        <div class="panel-desc">最大HPの上限を恒久的に【+20】増加させます。</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color:#ffffff; font-weight: bold; font-size: 18px;">150 CR</span>
+                        <button class="btn" onclick="buyShopItem('maxhp')">EXECUTE</button>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn" onclick="changeScreen('screen-town')">RETURN</button>
+            </div>
+        </div>
+
+        <div id="screen-skills" class="screen">
+            <div class="cyber-frame" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="margin: 0; letter-spacing: 3px; color: #ffffff;">KERNEL MATRIX</h2>
+                <div style="font-size: 18px;">CREDIT: <span id="skills-gold" style="color: #00e5ff;">0</span> CR</div>
+            </div>
+            <div class="grid-3" style="flex: 1;">
+                <div class="panel">
+                    <div>
+                        <div class="panel-title">OVERCLOCK [ATK]</div>
+                        <div class="panel-desc">入力完了時の威力が上昇。<br>(Lv.<span id="lv-atk">0</span>)</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color:#ffffff; font-weight:bold;" id="cost-atk">-- CR</span>
+                        <button class="btn" id="btn-upgrade-atk" onclick="upgradeSkill('atk')">UPGRADE</button>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div>
+                        <div class="panel-title">FIREWALL [DEF]</div>
+                        <div class="panel-desc">ミス時の被ダメージを軽減。<br>(Lv.<span id="lv-def">0</span>)</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color:#ffffff; font-weight:bold;" id="cost-def">-- CR</span>
+                        <button class="btn" id="btn-upgrade-def" onclick="upgradeSkill('def')">UPGRADE</button>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div>
+                        <div class="panel-title">SNIFFER [GOLD]</div>
+                        <div class="panel-desc">獲得クレジットがパーセントで増加。<br>(Lv.<span id="lv-gold">0</span>)</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color:#ffffff; font-weight:bold;" id="cost-gold">-- CR</span>
+                        <button class="btn" id="btn-upgrade-gold" onclick="upgradeSkill('gold')">UPGRADE</button>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn" onclick="changeScreen('screen-town')">RETURN</button>
+            </div>
+        </div>
+
+        <div id="screen-battle" class="screen">
+            <div id="battle-header" style="display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; letter-spacing: 2px;" class="cyber-frame">
+                <div id="battle-progress" style="color: #ffffff;">NODE SECTOR --</div>
+                <div>MY HP: <span id="player-hp" style="color: #00e5ff;">---</span></div>
+                <div>TARGET HP: <span id="enemy-hp" style="color: #ff3366;">--- %</span></div>
+            </div>
+            
+            <div id="battle-area">
+                <div id="enemy-container">
+                    <div id="enemy-sprite"></div>
+                </div>
+                
+                <div id="typing-container">
+                    <div id="typing-word"></div>
+                </div>
+
+                <div id="classify-container">
+                    <div id="classify-word"></div>
+                    <div>
+                        <button class="btn" onclick="checkClassification('noun')">NOUN [名詞]</button>
+                        <button class="btn" onclick="checkClassification('verb')">VERB [動詞]</button>
+                    </div>
+                </div>
+
+                <div id="fill-blank-container">
+                    <div id="fill-sentence"></div>
+                    <div id="fill-choices"></div>
+                </div>
+            </div>
+
+            <div id="message-box"></div>
+        </div>
+    </div>
+
+<script>
+    /* ==================================
+        難易度別 英単語データベース
+    ================================== */
+    const wordLevels = [
+        [ {en:"data", type:"noun"}, {en:"code", type:"noun"}, {en:"user", type:"noun"}, {en:"bug", type:"noun"}, {en:"link", type:"noun"}, {en:"save", type:"verb"}, {en:"run", type:"verb"}, {en:"play", type:"verb"}, {en:"move", type:"verb"} ],
+        [ {en:"system", type:"noun"}, {en:"memory", type:"noun"}, {en:"server", type:"noun"}, {en:"error", type:"noun"}, {en:"update", type:"verb"}, {en:"delete", type:"verb"}, {en:"search", type:"verb"}, {en:"clear", type:"verb"} ],
+        [ {en:"network", type:"noun"}, {en:"program", type:"noun"}, {en:"command", type:"noun"}, {en:"browser", type:"noun"}, {en:"connect", type:"verb"}, {en:"install", type:"verb"}, {en:"execute", type:"verb"}, {en:"compile", type:"verb"} ],
+        [ {en:"terminal", type:"noun"}, {en:"database", type:"noun"}, {en:"password", type:"noun"}, {en:"firewall", type:"noun"}, {en:"download", type:"verb"}, {en:"optimize", type:"verb"}, {en:"generate", type:"verb"}, {en:"transfer", type:"verb"} ],
+        [ {en:"algorithm", type:"noun"}, {en:"protocol", type:"noun"}, {en:"encryption", type:"noun"}, {en:"framework", type:"noun"}, {en:"encrypt", type:"verb"}, {en:"override", type:"verb"}, {en:"authenticate", type:"verb"} ]
+    ];
+
+    /* ==================================
+        【新規】難易度別 穴埋め問題データベース
+    ================================== */
+    const fillBlankLevels = [
+        // Lv 0 (World 1) : 基礎 (be動詞、代名詞、簡単な疑問文)
+        [
+            { sentence: "I [ ___ ] a programmer.", choices: ["am", "is", "are", "be"], correct: "am" },
+            { sentence: "This [ ___ ] my computer.", choices: ["am", "is", "are", "do"], correct: "is" },
+            { sentence: "Do you like games? - Yes, I [ ___ ].", choices: ["am", "do", "like", "are"], correct: "do" },
+            { sentence: "Look at [ ___ ] dog. It's cute.", choices: ["that", "those", "they", "them"], correct: "that" },
+            { sentence: "She [ ___ ] an apple every morning.", choices: ["eat", "eats", "eating", "ate"], correct: "eats" }
+        ],
+        // Lv 1 (World 2) : 中級 (前置詞、進行形、助動詞)
+        [
+            { sentence: "I go to school [ ___ ] bus.", choices: ["in", "on", "by", "with"], correct: "by" },
+            { sentence: "He is [ ___ ] music now.", choices: ["listen", "listens", "listened", "listening"], correct: "listening" },
+            { sentence: "You [ ___ ] stop at the red light.", choices: ["must", "can", "may", "will"], correct: "must" },
+            { sentence: "I have [ ___ ] brother and two sisters.", choices: ["a", "an", "the", "some"], correct: "a" },
+            { sentence: "Let's [ ___ ] soccer after school.", choices: ["play", "plays", "playing", "played"], correct: "play" }
+        ],
+        // Lv 2 (World 3) : 上級 (過去形、不定詞、動名詞)
+        [
+            { sentence: "She [ ___ ] an email yesterday.", choices: ["write", "writes", "writing", "wrote"], correct: "wrote" },
+            { sentence: "I want [ ___ ] a software engineer.", choices: ["be", "being", "to be", "been"], correct: "to be" },
+            { sentence: "Thank you for [ ___ ] me.", choices: ["help", "helps", "helped", "helping"], correct: "helping" },
+            { sentence: "I was born [ ___ ] October.", choices: ["at", "on", "in", "by"], correct: "in" },
+            { sentence: "Will you [ ___ ] me a favor?", choices: ["do", "make", "take", "give"], correct: "do" }
+        ],
+        // Lv 3 (World 4) : 難問 (比較、現在完了)
+        [
+            { sentence: "This PC is [ ___ ] than that one.", choices: ["old", "older", "oldest", "more old"], correct: "older" },
+            { sentence: "He is the [ ___ ] player in our team.", choices: ["tall", "taller", "tallest", "most tall"], correct: "tallest" },
+            { sentence: "I have just [ ___ ] my homework.", choices: ["finish", "finishes", "finishing", "finished"], correct: "finished" },
+            { sentence: "Have you ever [ ___ ] to London?", choices: ["be", "was", "went", "been"], correct: "been" },
+            { sentence: "English is as [ ___ ] as Math for me.", choices: ["easy", "easier", "easiest", "easily"], correct: "easy" }
+        ],
+        // Lv 4 (World 5) : 超難問 (関係代名詞、受動態、仮定法など)
+        [
+            { sentence: "This is the file [ ___ ] he sent.", choices: ["who", "whose", "which", "what"], correct: "which" },
+            { sentence: "The boy [ ___ ] is running is Tom.", choices: ["who", "which", "whose", "whom"], correct: "who" },
+            { sentence: "This software was [ ___ ] by him.", choices: ["make", "makes", "making", "made"], correct: "made" },
+            { sentence: "If I [ ___ ] a bird, I would fly to you.", choices: ["am", "is", "were", "be"], correct: "were" },
+            { sentence: "I know a man [ ___ ] father is a doctor.", choices: ["who", "whose", "which", "whom"], correct: "whose" }
+        ]
+    ];
+
+    const WORLD_DATA = [
+        { num: "01", name: "BASE LAYER" }, { num: "02", name: "LOCAL NETWORK" },
+        { num: "03", name: "MAIN MAINFRAME" }, { num: "04", name: "DEEP SERVER" },
+        { num: "05", name: "CORE SINGULARITY" }
+    ];
+
+    const HINTS = [
+        "タイピング中にキーを間違えるとシステムがダメージを受けます。正確な入力が必要です。",
+        "穴埋め問題（MISSING LINK）は、文章の前後関係をよく読んで正しいパーツを選択しましょう。",
+        "ショップで『CAPACITY EXTEND』を行うと、最大HPが恒久的に増加し生存率が高まります。",
+        "拠点に戻ったら、ログアウトする前に必ず『SAVE (セーブ)』を実行してデータを保存しましょう。"
+    ];
+
+    let player = { gold: 0, worldIndex: 0, stageIndex: 1, hp: 100, maxHp: 100, skills: { atk: 0, def: 0, gold: 0 } };
+    let enemyHp = 100, enemyMaxHp = 100, isBoss = false;
+    let currentTask = null, targetWordObj = null, targetFillObj = null, typedLength = 0;
+
+    function manualSave() {
+        initAudio(); playSynth(1500, audioCtx.currentTime, 0.1, 'sine', 0.1);
+        localStorage.setItem('cyber_english_save_V5', btoa(encodeURIComponent(JSON.stringify(player))));
+        alert("セーブ完了！\nシステムに現在の進行状況を保存しました。");
+    }
+
+    function loadGameFromTitle() {
+        initAudio(); playSynth(1200, audioCtx.currentTime, 0.1, 'sine', 0.1);
+        const saveString = localStorage.getItem('cyber_english_save_V5');
+        if (saveString) {
+            try {
+                Object.assign(player, JSON.parse(decodeURIComponent(atob(saveString))));
+                updateTownUI(); changeScreen('screen-town');
+                alert("保存されていたシステムデータをロードしました！");
+            } catch (e) { alert("セーブデータが正しく読み込めませんでした。"); }
+        } else { alert("セーブデータが見つかりませんでした。"); }
+    }
+
+    function startNewGame() {
+        initAudio(); playSynth(1200, audioCtx.currentTime, 0.1, 'sine', 0.1);
+        player = { gold: 0, worldIndex: 0, stageIndex: 1, hp: 100, maxHp: 100, skills: { atk: 0, def: 0, gold: 0 } };
+        updateTownUI(); changeScreen('screen-town');
+    }
+
+    function changeScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        if (screenId === 'screen-title') startBgm('title');
+        else if (screenId === 'screen-town') { updateTownUI(); startBgm('town'); }
+        else if (screenId === 'screen-shop') { updateShopUI(); startBgm('town'); }
+        else if (screenId === 'screen-skills') { updateSkillsUI(); startBgm('town'); }
+        else if (screenId === 'screen-battle') startBgm(isBoss ? 'boss' : 'battle');
+    }
+
+    function prepareBattle() {
+        if(player.hp <= 0) return;
+        changeScreen('screen-loading');
+        document.getElementById('loading-hint').innerText = HINTS[Math.floor(Math.random() * HINTS.length)];
+        let bar = document.getElementById('loading-bar');
+        bar.style.transition = 'none'; bar.style.width = '0%';
+        setTimeout(() => { bar.style.transition = 'width 2.5s linear'; bar.style.width = '100%'; }, 50);
+        setTimeout(startBattle, 2800);
+    }
+
+    function updateTownUI() {
+        if (player.worldIndex >= WORLD_DATA.length) player.worldIndex = WORLD_DATA.length - 1;
+        let w = WORLD_DATA[player.worldIndex];
+        document.getElementById('town-progress').innerText = `LAYER ${w.num}「${w.name}」 // ` + (player.stageIndex === 5 ? "WARNING: BOSS NODE" : `SECTOR 0${player.stageIndex}/05`);
+        document.getElementById('town-gold').innerText = player.gold;
+        document.getElementById('town-hp').innerText = `${player.hp} / ${player.maxHp}`;
+        document.getElementById('btn-dive').disabled = (player.hp <= 0);
+        if(player.hp <= 0) document.getElementById('town-progress').innerText = "SYSTEM CRITICAL // REPAIR REQUIRED";
+    }
+
+    function updateShopUI() { document.getElementById('shop-gold').innerText = player.gold; }
+    function buyShopItem(type) {
+        initAudio();
+        if (type === 'heal' && player.gold >= 50 && player.hp < player.maxHp) { player.gold -= 50; player.hp = player.maxHp; playSynth(880, audioCtx.currentTime, 0.3, 'sine', 0.1); }
+        else if (type === 'maxhp' && player.gold >= 150) { player.gold -= 150; player.maxHp += 20; player.hp += 20; playSynth(1200, audioCtx.currentTime, 0.4, 'triangle', 0.1); }
+        updateShopUI();
+    }
+
+    function getSkillCost(lv) { return lv >= 3 ? Infinity : (lv + 1) * 150; }
+    function updateSkillsUI() {
+        document.getElementById('skills-gold').innerText = player.gold;
+        ['atk', 'def', 'gold'].forEach(sk => {
+            let lv = player.skills[sk], cost = getSkillCost(lv);
+            document.getElementById(`lv-${sk}`).innerText = lv;
+            document.getElementById(`cost-${sk}`).innerText = cost === Infinity ? "MAX" : `${cost} CR`;
+            document.getElementById(`btn-upgrade-${sk}`).disabled = (player.gold < cost || lv >= 3);
+        });
+    }
+    function upgradeSkill(sk) {
+        initAudio(); let lv = player.skills[sk], cost = getSkillCost(lv);
+        if (player.gold >= cost && lv < 3) { player.gold -= cost; player.skills[sk]++; playSynth(1500, audioCtx.currentTime, 0.2, 'square', 0.08); updateSkillsUI(); }
+    }
+
+    function startBattle() {
+        isBoss = (player.stageIndex === 5);
+        document.getElementById('enemy-sprite').className = isBoss ? "enemy-boss" : "enemy-minion";
+        document.getElementById('battle-header').className = isBoss ? "cyber-frame boss-alert" : "cyber-frame";
+        enemyMaxHp = 40 + (player.worldIndex * 60) + (player.stageIndex * 20);
+        if (isBoss) enemyMaxHp = Math.floor(enemyMaxHp * 2.5);
+        enemyHp = enemyMaxHp;
+
+        changeScreen('screen-battle'); updateBattleUI();
+        document.getElementById('message-box').innerHTML = isBoss ? "<span style='color:#ff3366;'>[WARNING] 重大な脅威を検知。戦闘を開始します。</span>" : "[SYSTEM] ウイルスプログラムを検知。迎撃シーケンスを開始します。";
+        setTimeout(nextTurn, 1500);
+    }
+
+    function updateBattleUI() {
+        let w = WORLD_DATA[player.worldIndex];
+        document.getElementById('battle-progress').innerText = isBoss ? `LAYER ${w.num} // BOSS` : `LAYER ${w.num} // SEC 0${player.stageIndex}`;
+        document.getElementById('player-hp').innerText = `${player.hp} / ${player.maxHp}`;
+        document.getElementById('enemy-hp').innerText = Math.ceil((enemyHp / enemyMaxHp) * 100);
+    }
+
+    function nextTurn() {
+        if (enemyHp <= 0 || player.hp <= 0) return;
+        
+        let wordPool = wordLevels[Math.min(player.worldIndex, wordLevels.length - 1)];
+        let fillPool = fillBlankLevels[Math.min(player.worldIndex, fillBlankLevels.length - 1)];
+        
+        // タスクを3種類の中からランダムに選択 (タイピング 33%, 判別 33%, 穴埋め 33%)
+        let taskType = Math.random();
+        if (taskType < 0.33) {
+            targetWordObj = wordPool[Math.floor(Math.random() * wordPool.length)];
+            startTypingTask();
+        } else if (taskType < 0.66) {
+            targetWordObj = wordPool[Math.floor(Math.random() * wordPool.length)];
+            startClassifyTask();
+        } else {
+            targetFillObj = fillPool[Math.floor(Math.random() * fillPool.length)];
+            startFillBlankTask();
+        }
+    }
+
+    // --- タスク1：タイピング ---
+    function startTypingTask() {
+        currentTask = 'typing'; typedLength = 0;
+        document.getElementById('classify-container').style.display = 'none';
+        document.getElementById('fill-blank-container').style.display = 'none';
+        document.getElementById('typing-container').style.display = 'block';
+        document.getElementById('message-box').innerText = ">> [TYPE CODE] ターゲットコードを正確にタイピングしてください。";
+        renderTypingWord();
+    }
+    function renderTypingWord() {
+        const t = targetWordObj.en.substring(0, typedLength), u = targetWordObj.en.substring(typedLength);
+        document.getElementById('typing-word').innerHTML = `<span class="typed">${t}</span><span class="untyped">${u}</span>`;
+    }
+
+    // --- タスク2：品詞判別 ---
+    function startClassifyTask() {
+        currentTask = 'classify';
+        document.getElementById('typing-container').style.display = 'none';
+        document.getElementById('fill-blank-container').style.display = 'none';
+        document.getElementById('classify-container').style.display = 'block';
+        document.getElementById('classify-word').innerText = targetWordObj.en.toUpperCase();
+        document.getElementById('message-box').innerText = ">> [CLASSIFY] 対象データの正しい品詞属性を選択してください。";
+    }
+
+    // --- タスク3：穴埋め問題 (MISSING LINK) ---
+    function startFillBlankTask() {
+        currentTask = 'fillblank';
+        document.getElementById('typing-container').style.display = 'none';
+        document.getElementById('classify-container').style.display = 'none';
+        document.getElementById('fill-blank-container').style.display = 'block';
+        
+        document.getElementById('message-box').innerText = ">> [MISSING LINK] 文章の欠落を修復するため、適切なデータを選択してください。";
+        document.getElementById('fill-sentence').innerText = targetFillObj.sentence;
+        
+        let choicesHtml = '';
+        targetFillObj.choices.forEach(choice => {
+            choicesHtml += `<button class="btn" onclick="checkFillBlank('${choice}')">${choice}</button>`;
+        });
+        document.getElementById('fill-choices').innerHTML = choicesHtml;
+    }
+
+    function checkFillBlank(selectedChoice) {
+        if (currentTask !== 'fillblank') return;
+        initAudio();
+        if (selectedChoice === targetFillObj.correct) {
+            let dmg = 40 + (player.skills.atk * 12); // 文章問題は少しダメージが高め
+            dealDamage(dmg, "構文の修復に成功。クリティカルパケットを転送します。");
+        } else { triggerFeedbackError(); }
+    }
+
+    function checkClassification(selectedType) {
+        if (currentTask !== 'classify') return;
+        initAudio();
+        if (targetWordObj.type === selectedType) {
+            let dmg = 30 + (player.skills.atk * 10);
+            dealDamage(dmg, "属性照合クリア。データクラッシュを実行します。");
+        } else { triggerFeedbackError(); }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (currentTask !== 'typing') return;
+        initAudio();
+        const key = e.key.toLowerCase(), nextChar = targetWordObj.en[typedLength].toLowerCase();
+        if (key === nextChar) {
+            typedLength++; playSynth(1200, audioCtx.currentTime, 0.05, 'sine', 0.05); renderTypingWord();
+            if (typedLength === targetWordObj.en.length) {
+                let dmg = 20 + (player.skills.atk * 8);
+                dealDamage(dmg, "タイピング完了。攻撃パケットを転送します。");
+            }
+        } else if (e.key.length === 1 && e.key !== " ") { triggerFeedbackError(); }
+    });
+
+    function triggerFeedbackError() {
+        initAudio();
+        let dmg = isBoss ? 25 : 15;
+        let reduction = player.skills.def * 0.15;
+        dmg = Math.max(1, Math.floor(dmg * (1 - reduction)));
+
+        player.hp -= dmg; if(player.hp < 0) player.hp = 0; updateBattleUI();
+        playSynth(150, audioCtx.currentTime, 0.3, 'sawtooth', 0.2);
+        document.getElementById('message-box').innerHTML = `<span style='color:#ff3366;'>[ERROR] 入力ミス。システムが ${dmg} のダメージを受けました。</span>`;
+
+        if (player.hp <= 0) {
+            setTimeout(() => {
+                document.getElementById('typing-container').style.display = 'none';
+                document.getElementById('classify-container').style.display = 'none';
+                document.getElementById('fill-blank-container').style.display = 'none';
+                document.getElementById('message-box').innerHTML = "<span style='color:#ff3366;'>[CRITICAL] システムダウン。ベースキャンプへ強制転送します。</span>";
+                setTimeout(() => { changeScreen('screen-town'); }, 3000);
+            }, 1000);
+        } else { currentTask = null; setTimeout(nextTurn, 1500); }
+    }
+
+    function dealDamage(amount, msg) {
+        initAudio();
+        currentTask = null; enemyHp -= amount; if (enemyHp < 0) enemyHp = 0; updateBattleUI();
+        playSynth(600, audioCtx.currentTime, 0.1, 'square', 0.1);
+        document.getElementById('message-box').innerText = `${msg}\n対象に ${amount} のダメージを与えました。`;
+
+        if (enemyHp <= 0) {
+            document.getElementById('typing-container').style.display = 'none';
+            document.getElementById('classify-container').style.display = 'none';
+            document.getElementById('fill-blank-container').style.display = 'none';
+            
+            let reward = 50 + (player.worldIndex * 40) + (player.stageIndex * 10);
+            if(isBoss) reward *= 2;
+            reward = Math.floor(reward * (1 + player.skills.gold * 0.25));
+            
+            player.gold += reward;
+            document.getElementById('message-box').innerHTML = `<span style='color:#00e5ff;'>対象の完全消去を確認。\n報酬: +${reward} CR を獲得しました。</span>`;
+            
+            if (isBoss) {
+                player.stageIndex = 1; player.worldIndex++;
+                document.getElementById('message-box').innerHTML += `<br><span style='color:#ffffff;'>>> LAYER CLEARED: 次の階層へのアクセス権限を取得しました。</span>`;
+            } else { player.stageIndex++; }
+            setTimeout(() => { changeScreen('screen-town'); }, 3000);
+        } else { setTimeout(nextTurn, 1200); }
+    }
+
+    /* ==================================
+        BGM & 音声システム
+    ================================== */
+    let audioCtx = null, bgmTimer = null, bgmType = null, nextNoteTime = 0, beatCount = 0;
+    
+    function initAudio() { 
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSynth(freq, startTime, duration, type = 'sine', gainVal = 0.05) {
+        if (!audioCtx) return;
+        let osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, startTime);
+        gainNode.gain.setValueAtTime(0, startTime); gainNode.gain.linearRampToValueAtTime(gainVal, startTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+        osc.start(startTime); osc.stop(startTime + duration);
+    }
+
+    function startBgm(type) {
+        initAudio(); if (bgmType === type) return; bgmType = type; beatCount = 0; 
+        if (audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
+        if (bgmTimer) clearTimeout(bgmTimer); runScheduler();
+    }
+
+    function runScheduler() {
+        if (!bgmType || !audioCtx) return;
+        if (audioCtx.state === 'suspended') { bgmTimer = setTimeout(runScheduler, 50); return; }
+        if (nextNoteTime < audioCtx.currentTime) nextNoteTime = audioCtx.currentTime + 0.05;
+
+        let bpm = 120; if (bgmType === 'battle') bpm = 145; if (bgmType === 'boss') bpm = 160;
+        let beatTime = 60 / bpm;
+        while (nextNoteTime < audioCtx.currentTime + 0.1) {
+            scheduler(beatCount, nextNoteTime, beatTime); nextNoteTime += beatTime / 2; beatCount++;
+        }
+        bgmTimer = setTimeout(runScheduler, 25);
+    }
+
+    function scheduler(beat, time, beatTime) {
+        let step = beat % 16, bar = Math.floor(beat / 16) % 4;
+        if (bgmType === 'title') {
+            const base = [110.00, 130.81, 146.83, 98.00][bar];
+            if (step % 4 === 0) playSynth(base, time, beatTime * 0.8, 'sine', 0.06);
+            if (step % 3 === 0) playSynth(base * 4, time, beatTime * 0.3, 'sine', 0.03);
+        } else if (bgmType === 'town') {
+            const base = [146.83, 164.81, 196.00, 220.00][bar];
+            if (step % 4 === 2) playSynth(base / 2, time, beatTime * 0.4, 'triangle', 0.08);
+            if (step % 4 === 0) playSynth(base, time, beatTime * 0.2, 'square', 0.02);
+        } else if (bgmType === 'battle') {
+            const base = [116.54, 130.81, 146.83, 146.83][bar];
+            if (step % 2 === 0) playSynth(base / 2, time, beatTime * 0.25, 'sawtooth', 0.06);
+            if (step % 4 === 1 || step % 4 === 3) playSynth(base * 4, time, beatTime * 0.1, 'square', 0.02);
+        } else if (bgmType === 'boss') {
+            const base = step % 8 < 4 ? 110.00 : 98.00;
+            playSynth(base / 2, time, beatTime * 0.15, 'sawtooth', 0.08);
+            if (step % 8 === 0) playSynth(880, time, beatTime * 0.4, 'square', 0.03);
+        }
+    }
+
+    function startSystem() {
+        document.getElementById('audio-trigger').style.display = 'none'; initAudio();
+        const s = document.createElement('div'), t = document.createElement('div');
+        s.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:999999;display:flex;justify-content:center;align-items:center;transition:opacity 0.8s ease;";
+        t.innerText = 'Yutararu Presents';
+        t.style.cssText = "color:#00e5ff;font-size:36px;letter-spacing:10px;opacity:0;transition:opacity 1.2s ease;font-weight:bold;text-shadow:0 0 20px #00e5ff;";
+        s.appendChild(t); document.body.appendChild(s);
+        setTimeout(() => { t.style.opacity = '1'; }, 200);
+        setTimeout(() => { s.style.opacity = '0'; }, 2200);
+        setTimeout(() => { s.remove(); changeScreen('screen-title'); }, 3000);
+    }
+</script>
+</body>
+</html>

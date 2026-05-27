@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5-SUBJECT RPG PORTAL - SYSTEM V3.1</title>
+    <style>
+        /* === サイバーレトロRPGスタイル === */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        body {
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            background-image: 
+                linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        #game-app {
+            width: 850px;
+            height: 650px;
+            position: relative;
+            background: rgba(10, 10, 10, 0.85);
+            border: 2px solid #333;
+            border-top: 5px solid #00ffcc;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 25px;
+            border-radius: 4px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* ヘッダー装飾 */
+        .header-ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px dashed #00ffcc;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin: 0;
+            letter-spacing: 6px;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            animation: textFlicker 3s infinite alternate;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        @keyframes textFlicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+            20%, 24%, 55% { opacity: 0.5; }
+        }
+
+        /* ゲート（カード）選択エリア */
+        .portal-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            padding: 10px;
+        }
+
+        /* 各教科のゲートデザイン */
+        .gate-card {
+            background: linear-gradient(180deg, #111 0%, #080808 100%);
+            border: 1px solid #333;
+            border-top: 3px solid #555;
+            border-radius: 8px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            text-decoration: none;
+            color: #fff;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        /* 稼働中（READY）の演出 */
+        .gate-card.ready {
+            border-top-color: #00ffcc;
+        }
+        
+        .gate-card.ready::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 204, 0.2), transparent);
+            transform: skewX(-20deg);
+            transition: 0.5s;
+        }
+
+        .gate-card.ready:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 255, 204, 0.2);
+            border-color: #00ffcc;
+        }
+        
+        .gate-card.ready:hover::before {
+            left: 200%;
+        }
+
+        /* 未実装（SEALED）の演出 */
+        .gate-card.locked {
+            border-top-color: #ff3366;
+            color: #555;
+            cursor: not-allowed;
+            background: repeating-linear-gradient(
+                45deg,
+                #0a0a0a,
+                #0a0a0a 10px,
+                #111 10px,
+                #111 20px
+            );
+        }
+
+        .gate-card.locked .gate-title {
+            color: #555;
+            text-shadow: none;
+        }
+
+        .gate-title { 
+            font-size: 32px; 
+            font-weight: bold; 
+            margin-bottom: 12px;
+            letter-spacing: 4px;
+            font-family: 'MS PGothic', sans-serif;
+            z-index: 1;
+        }
+        .gate-name { 
+            font-size: 13px; 
+            color: #aaa;
+            letter-spacing: 1px;
+            z-index: 1;
+        }
+        
+        .ready .gate-title {
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255,255,255,0.3);
+        }
+
+        /* 右上のステータスタグ */
+        .status-tag {
+            position: absolute;
+            top: 12px; right: 12px;
+            font-size: 11px; 
+            padding: 3px 8px;
+            border: 1px solid currentColor;
+            font-weight: bold;
+            border-radius: 3px;
+            letter-spacing: 1px;
+            background: rgba(0,0,0,0.8);
+            z-index: 2;
+        }
+        .ready .status-tag { 
+            color: #00ffcc; 
+            box-shadow: 0 0 5px rgba(0,255,204,0.3);
+        }
+        .locked .status-tag { 
+            color: #ff3366; 
+            border-style: dashed;
+        }
+
+        /* UIスキャナーライン */
+        .scanner {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: rgba(0, 255, 204, 0.5);
+            box-shadow: 0 0 10px #00ffcc;
+            opacity: 0.5;
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scanline {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* === ロック画面（モーダル） === */
+        #locked-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(4px);
+            justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            border: 1px solid #ff3366;
+            border-top: 5px solid #ff3366;
+            background: #050505;
+            padding: 40px;
+            text-align: center;
+            width: 450px;
+            box-shadow: 0 0 30px rgba(255, 51, 102, 0.2);
+            border-radius: 4px;
+        }
+        .modal-btn {
+            background: transparent; 
+            color: #ff3366; 
+            border: 1px solid #ff3366;
+            padding: 12px 35px; 
+            cursor: pointer; 
+            font-family: inherit;
+            font-size: 16px;
+            margin-top: 30px;
+            transition: 0.2s;
+            letter-spacing: 2px;
+        }
+        .modal-btn:hover { 
+            background: #ff3366; 
+            color: #000; 
+            box-shadow: 0 0 15px #ff3366;
+        }
+
+        /* 起動トリガー */
+        #audio-trigger {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 100000;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+        }
+        .trigger-text {
+            color: #00ffcc;
+            font-size: 24px;
+            letter-spacing: 4px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; text-shadow: 0 0 10px #00ffcc; }
+            50% { opacity: 0.3; text-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="audio-trigger" onclick="startSystem()">
+        <div style="text-align: center;">
+            <p style="font-size: 18px; color: #555; letter-spacing: 6px; margin-bottom: 20px;">SYSTEM INITIALIZATION</p>
+            <p class="trigger-text">[ CLICK TO ENGAGE LINK ]</p>
+        </div>
+    </div>
+
+    <div id="game-app">
+        <div class="scanner"></div>
+        
+        <div class="header-ui">
+            <div>
+                <h1>SUBJECT GATEWAY</h1>
+                <div class="subtitle">SELECT DEPLOYMENT TARGET AREA</div>
+            </div>
+            <div style="text-align: right; font-size: 12px; color: #555;">
+                STATUS: <span style="color: #00ffcc;">ONLINE</span><br>
+                VERSION: 3.1.5
+            </div>
+        </div>
+
+        <div class="portal-grid">
+            <a href="Math-RPG.Ver.1.8.2.html" class="gate-card ready">
+                <span class="status-tag">READY</span>
+                <div class="gate-title">数学</div>
+                <div class="gate-name">- 正負のダンジョン -</div>
+            </a>
+
+            <a href="Japanese-RPG Ver.1.1.6.html" class="gate-card ready">
+                <span class="status-tag">READY</span>
+                <div class="gate-title">国語</div>
+                <div class="gate-name">- 漢字と熟語の試練 -</div>
+            </a>
+
+            <a href="English.html" class="gate-card ready">
+                <span class="status-tag">READY</span>
+                <div class="gate-title">英語</div>
+                <div class="gate-name">- CYBER RELIC -</div>
+            </a>
+
+            <div class="gate-card locked" onclick="showLockedModal('理科')">
+                <span class="status-tag">SEALED</span>
+                <div class="gate-title">理科</div>
+                <div class="gate-name">- 元素の洞窟 -</div>
+            </div>
+
+            <div class="gate-card locked" onclick="showLockedModal('社会')">
+                <span class="status-tag">SEALED</span>
+                <div class="gate-title">社会</div>
+                <div class="gate-name">- 歴史の城 -</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="locked-modal">
+        <div class="modal-content">
+            <h2 style="color: #ff3366; letter-spacing: 4px; margin-top: 0;">ACCESS DENIED</h2>
+            <div style="width: 50px; height: 2px; background: #ff3366; margin: 15px auto;"></div>
+            <p id="modal-text" style="line-height: 1.6; color: #ddd;"></p>
+            <button class="modal-btn" onclick="closeModal()">DISCONNECT</button>
+        </div>
+    </div>
+
+<script>
+    /* ==================================
+       Web Audio API - チップチューンBGM
+    ================================== */
+    let audioCtx = null;
+    let isPlaying = false;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    const melody = [
+        {f: 261.63, d: 0.5}, {f: 329.63, d: 0.5}, {f: 392.00, d: 0.5}, {f: 523.25, d: 1.0},
+        {f: 349.23, d: 0.5}, {f: 440.00, d: 0.5}, {f: 523.25, d: 0.5}, {f: 587.33, d: 1.0},
+        {f: 392.00, d: 0.5}, {f: 493.88, d: 0.5}, {f: 587.33, d: 0.5}, {f: 783.99, d: 1.0}
+    ];
+
+    function playBGM() {
+        let noteIdx = 0;
+        let nextTime = audioCtx.currentTime;
+
+        function scheduler() {
+            while (nextTime < audioCtx.currentTime + 0.1) {
+                const note = melody[noteIdx % melody.length];
+                playNote(note.f, nextTime, note.d);
+                nextTime += note.d;
+                noteIdx++;
+            }
+            if(isPlaying) setTimeout(scheduler, 25);
+        }
+
+        function playNote(freq, startTime, duration) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, startTime);
+            
+            gain.gain.setValueAtTime(0.04, startTime); // 音量を少し控えめに調整
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        }
+        scheduler();
+    }
+
+    /* ==================================
+       システム処理
+    ================================== */
+    function startSystem() {
+        initAudio();
+        document.getElementById('audio-trigger').style.display = 'none';
+        isPlaying = true;
+        playBGM();
+        playSplash();
+    }
+
+    function playSplash() {
+        const splash = document.createElement('div');
+        splash.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #000; z-index: 99999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 1s ease;
+        `;
+
+        const logoText = document.createElement('div');
+        logoText.innerText = 'Yutararu Presents';
+        logoText.style.cssText = `
+            color: #00ffcc; font-size: 36px; letter-spacing: 8px;
+            opacity: 0; transition: opacity 1.5s ease;
+            text-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+            font-family: 'Share Tech Mono', monospace;
+        `;
+
+        splash.appendChild(logoText);
+        document.body.appendChild(splash);
+
+        setTimeout(() => { logoText.style.opacity = '1'; }, 200);
+        setTimeout(() => { splash.style.opacity = '0'; }, 2500);
+        setTimeout(() => { splash.remove(); }, 3500);
+    }
+
+    function showLockedModal(subject) {
+        // 効果音（エラー音）
+        if (audioCtx) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        document.getElementById('modal-text').innerHTML = `領域 [ ${subject} ] は強力な封印によりアクセスできません。<br><br>システムアップデートを待機してください。`;
+        
+        const modal = document.getElementById('locked-modal');
+        modal.style.display = 'flex';
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.transition = 'opacity 0.2s';
+            modal.style.opacity = '1';
+        }, 10);
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('locked-modal');
+        modal.style.opacity = '0';
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+    }
+</script>
+</body>
+</html>

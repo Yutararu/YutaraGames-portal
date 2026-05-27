@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国語RPG - 漢字と熟語の試練 Ver.1.1.7</title>
+    <style>
+        /* === レトロRPGスタイル === */
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: 'Courier New', 'MS PGothic', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-app {
+            width: 800px;
+            height: 650px;
+            position: relative;
+            background: #000;
+            border: 4px solid #fff;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .screen.active { 
+            display: flex; 
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* 各画面の背景 */
+        #screen-title { background: linear-gradient(to bottom, #2c3e50, #000); justify-content: center; align-items: center; }
+        #screen-town { background: linear-gradient(to bottom, #1e3c72, #2a5298); overflow-y: auto; }
+        #screen-shop { background: linear-gradient(to bottom, #4b3832, #1b120f); }
+        #screen-battle { background: linear-gradient(to bottom, #870000, #190000); justify-content: space-between; }
+
+        /* RPGウィンドウ・ボタン */
+        .rpg-window {
+            background-color: #000;
+            border: 3px solid #fff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        .rpg-btn {
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.1s;
+        }
+        .rpg-btn:hover { background-color: #fff; color: #000; }
+        .rpg-btn:disabled { border-color: #555; color: #555; cursor: not-allowed; background: #222; }
+
+        /* ショップグリッド */
+        .shop-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+            overflow-y: auto; max-height: 300px; padding: 10px; border: 2px solid #aaa; background: #111;
+        }
+        .shop-item {
+            background: #000; border: 2px solid #f1c40f; padding: 10px;
+            text-align: center; cursor: pointer; border-radius: 5px;
+        }
+        .shop-item:hover { background: #f1c40f; color: #000; }
+
+        /* バトル画面レイアウト */
+        .battle-layout { display: flex; flex-direction: column; height: 100%; justify-content: space-between; }
+        .enemy-area { text-align: center; padding: 10px; }
+        .enemy-hp { font-size: 24px; color: #ff3333; font-weight: bold; }
+
+        /* 錬金エリア */
+        .craft-area { display: flex; justify-content: center; gap: 15px; margin: 10px 0; align-items: center; }
+        
+        /* 手札エリア */
+        .hand-area {
+            display: flex; justify-content: center; gap: 10px; padding: 10px;
+            background: rgba(255,255,255,0.1); border-top: 2px solid #fff;
+        }
+
+        /* カードデザイン */
+        .card {
+            width: 70px; height: 90px; background: #000; border: 2px solid #fff;
+            border-radius: 5px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; cursor: pointer; transition: 0.1s;
+        }
+        .card:hover { background: #333; transform: translateY(-5px); }
+        .card.selected { border-color: #f1c40f; background: #443400; transform: translateY(-10px); }
+        .card-type { font-size: 10px; color: #aaa; margin-top: 5px; }
+
+        .crafted-slot {
+            font-size: 32px; font-weight: bold; color: #00ff00;
+            letter-spacing: 5px; min-width: 80px; text-align: center;
+        }
+
+        /* システム起動レイバーレイ */
+        #audio-trigger {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.95); z-index: 100000;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="audio-trigger" onclick="startSystem()">
+    <div class="rpg-window" style="text-align: center;">
+        <p style="font-size: 18px; color: #fff; letter-spacing: 2px;">国語RPG SYSTEM CONNECTING...</p>
+        <p style="color: #f1c40f; animation: pulse 1.5s infinite; font-weight: bold;">▶ CLICK TO START</p>
+    </div>
+</div>
+
+<div id="game-app">
+    <div id="screen-title" class="screen">
+        <div class="rpg-window" style="text-align: center; padding: 40px; margin-top: 80px;">
+            <h1 style="margin-top: 0; font-size: 40px;">国語RPG<br>漢字と熟語の試練</h1>
+            <div style="margin-top: 50px; display: flex; justify-content: center; gap: 30px;">
+                <button class="rpg-btn" onclick="startGame()">初めから</button>
+                <button class="rpg-btn" onclick="loadGameFromTitle()" style="border-color: #f1c40f; color: #f1c40f;">続きから</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-town" class="screen">
+        <h2>修業の里（タウン）</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="rpg-window">
+                <p style="color: #2ecc71;">自分のHP: <span id="town-hp">100</span> / 100</p>
+                <p style="color: #f1c40f;">所持金: <span id="town-gold">0</span> G</p>
+                <p style="color: #3498db;">現在の山札: <span id="deck-count">0</span> 枚</p>
+                <p style="color: #e74c3c; font-weight: bold;">現在の領域: <span id="town-progress">壱ノ域 (1/5)</span></p>
+            </div>
+            <div class="rpg-window" style="display: flex; flex-direction: column; gap: 10px; justify-content: center;">
+                <button class="rpg-btn" style="border-color: #e74c3c; color: #ffcccc;" onclick="startBattle()">ダンジョンへ突入</button>
+                <button class="rpg-btn" onclick="openShop()">漢字屋（カード購入）へ</button>
+                <button class="rpg-btn" onclick="saveGame()" style="border-color: #3498db; color: #3498db;">冒険をセーブする</button>
+            </div>
+        </div>
+
+        <div class="rpg-window" style="margin-top: 15px;">
+            <h3 style="margin-top: 0; color: #f1c40f;">萬屋（アイテムショップ）</h3>
+            <p style="font-size: 12px; color: #ccc;">バトル中に使える強力な道具だ。タップして購入できるぞ。</p>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                <button class="rpg-btn" onclick="buyItem('tea', 40)">文豪の茶 (40G) <br><span style="font-size:10px; color:#aaa;">自分のHPを50回復 [所持:<span id="own-tea">0</span>]</span></button>
+                <button class="rpg-btn" onclick="buyItem('ink', 50)">濃縮墨汁 (50G) <br><span style="font-size:10px; color:#aaa;">次の一撃がクリティカル(3倍) [所持:<span id="own-ink">0</span>]</span></button>
+                <button class="rpg-btn" onclick="buyItem('scroll', 80)">言霊の巻物 (80G) <br><span style="font-size:10px; color:#aaa;">現在の札で作れる漢字を教える [所持:<span id="own-scroll">0</span>]</span></button>
+                <button class="rpg-btn" onclick="buyItem('talisman', 120)">身代わり札 (120G) <br><span style="font-size:10px; color:#aaa;">HP0の時、自動でHP1で耐える [所持:<span id="own-talisman">0</span>]</span></button>
+                <button class="rpg-btn" onclick="buyItem('dictionary', 200)">禁断 of 字典 (200G) <br><span style="font-size:10px; color:#aaa;">敵の現在HPを半分にする [所持:<span id="own-dictionary">0</span>]</span></button>
+                <button class="rpg-btn" onclick="buyItem('brush', 500)">神筆・鳳凰 (500G) <br><span style="font-size:10px; color:#ff7675;">敵を一瞬で即死させる奥義 [所持:<span id="own-brush">0</span>]</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-shop" class="screen">
+        <h2>漢字屋（カード購入）</h2>
+        <div class="rpg-window" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>所持金: <span id="shop-gold">0</span> G</span>
+            <button class="rpg-btn" onclick="changeScreen('screen-town')">街へ戻る</button>
+        </div>
+        <div class="shop-grid" id="shop-container"></div>
+    </div>
+
+    <div id="screen-battle" class="screen">
+        <div class="battle-layout">
+            
+            <div style="display: flex; gap: 10px;">
+                <div class="enemy-area rpg-window" style="flex: 1;">
+                    <h3 id="enemy-name" style="margin: 0;">試練の石碑</h3>
+                    <div class="enemy-hp">敵HP: <span id="enemy-hp">150</span></div>
+                </div>
+                <div class="rpg-window" style="text-align: center;">
+                    <h4 style="margin: 0; color: #2ecc71;">自分のHP</h4>
+                    <div style="font-size: 20px; font-weight: bold;"><span id="battle-player-hp">100</span> / 100</div>
+                </div>
+            </div>
+
+            <div class="rpg-window" style="padding: 10px;">
+                <div style="font-size: 12px; margin-bottom: 5px; color: #f1c40f;">【アイテム袋】</div>
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                    <button class="rpg-btn" style="padding: 5px;" onclick="useBattleItem('tea')">🍵茶(残<span id="b-tea">0</span>)</button>
+                    <button class="rpg-btn" style="padding: 5px;" onclick="useBattleItem('ink')">✒️墨汁(残<span id="b-ink">0</span>)</button>
+                    <button class="rpg-btn" style="padding: 5px;" onclick="useBattleItem('scroll')">📜巻物(残<span id="b-scroll">0</span>)</button>
+                    <button class="rpg-btn" style="padding: 5px;" onclick="useBattleItem('dictionary')">📖字典(残<span id="b-dictionary">0</span>)</button>
+                    <button class="rpg-btn" style="padding: 5px; border-color: #ff7675; color: #ff7675;" onclick="useBattleItem('brush')">🔥神筆(残<span id="b-brush">0</span>)</button>
+                </div>
+            </div>
+
+            <div>
+                <div style="text-align: center; color: #f1c40f; min-height: 24px;" id="battle-message">パーツを選んで漢字を錬金しよう！</div>
+                <div class="craft-area">
+                    <div id="slot-hen" class="card" style="border-style: dashed; color: #555;">へん</div>
+                    <div style="font-size: 24px;">＋</div>
+                    <div id="slot-tsukuri" class="card" style="border-style: dashed; color: #555;">つくり</div>
+                    <button class="rpg-btn" style="margin-left: 20px;" onclick="combineCards()">漢字合体！</button>
+                </div>
+                <div class="craft-area">
+                    <span>ストック: </span>
+                    <div class="crafted-slot" id="crafted-kanji-display">ーー</div>
+                    <button class="rpg-btn" style="border-color: #ff3333; color: #ffcccc;" onclick="attackWithWord()">熟語で攻撃！</button>
+                </div>
+            </div>
+
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 0 10px;">
+                    <button class="rpg-btn" style="font-size: 12px; padding: 5px 10px; border-color: #3498db; color: #3498db;" onclick="redrawHand()">手札を引き直す</button>
+                    <div style="font-size: 12px;">残り山札: <span id="draw-pile-count">0</span>枚</div>
+                </div>
+                <div class="hand-area" id="player-hand"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  /* ==================================
+        Web Audio API - 超壮大BGMシステム
+    ================================== */
+    let audioCtx = null;
+    let bgmTimer = null;
+    let bgmType = null; // 'title' | 'town' | 'shop' | 'battle'
+    let nextNoteTime = 0;
+    let beatCount = 0;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function startBgm(type) {
+        initAudio();
+        if (bgmType === type) return;
+        stopBgm();
+        bgmType = type;
+        beatCount = 0;
+        nextNoteTime = audioCtx.currentTime + 0.1;
+        runScheduler();
+    }
+
+    function stopBgm() {
+        bgmType = null;
+        if (bgmTimer) {
+            clearTimeout(bgmTimer);
+            bgmTimer = null;
+        }
+    }
+
+    function runScheduler() {
+        if (!bgmType) return;
+        
+        // 各画面ごとのテンポ設定
+        let bpm = 80;
+        if (bgmType === 'town') bpm = 95;
+        if (bgmType === 'shop') bpm = 115;
+        if (bgmType === 'battle') bpm = 135;
+        
+        let beatTime = 60 / bpm;
+
+        while (nextNoteTime < audioCtx.currentTime + 0.1) {
+            scheduler(beatCount, nextNoteTime, beatTime);
+            nextNoteTime += beatTime;
+            beatCount++;
+        }
+        bgmTimer = setTimeout(runScheduler, 25);
+    }
+
+    function playSynth(freq, startTime, duration, type = 'sine', gainVal = 0.1, attack = 0.05, release = 0.1) {
+        if (!audioCtx) return;
+        let osc = audioCtx.createOscillator();
+        let gainNode = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(gainVal, startTime + attack);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    }
+
+    function scheduler(beat, time, beatTime) {
+        let bar = Math.floor(beat / 4) % 4;
+        let beatInBar = beat % 4;
+        
+        if (bgmType === 'title') {
+            // タイトルBGM
+            const chords = [
+                { root: 261.63, notes: [329.63, 392.00, 523.25] },
+                { root: 349.23, notes: [440.00, 523.25, 698.46] },
+                { root: 392.00, notes: [493.88, 587.33, 783.99] },
+                { root: 261.63, notes: [329.63, 392.00, 523.25] }
+            ];
+            let chord = chords[bar];
+            if (beatInBar === 0) {
+                playSynth(chord.root / 2, time, beatTime * 4, 'triangle', 0.15, 0.1, 0.3);
+            }
+            playSynth(chord.notes[beatInBar % chord.notes.length], time, beatTime * 0.8, 'sine', 0.08, 0.05, 0.2);
+
+        } else if (bgmType === 'town') {
+            // 街BGM
+            const chords = [
+                { root: 293.66, notes: [349.23, 440.00, 587.33] },
+                { root: 349.23, notes: [440.00, 523.25, 698.46] },
+                { root: 261.63, notes: [329.63, 392.00, 523.25] },
+                { root: 293.66, notes: [349.23, 440.00, 587.33] }
+            ];
+            let chord = chords[bar];
+            if (beatInBar === 0) {
+                playSynth(chord.root / 2, time, beatTime * 4, 'sine', 0.12, 0.1, 0.4);
+            }
+            if (beatInBar % 2 === 0) {
+                playSynth(chord.notes[beatInBar % chord.notes.length], time, beatTime * 1.5, 'sine', 0.06, 0.08, 0.3);
+            }
+
+        } else if (bgmType === 'shop') {
+            // ショップBGM
+            const chords = [
+                { root: 329.63, notes: [392.00, 493.88, 659.25] },
+                { root: 440.00, notes: [554.37, 659.25, 880.00] },
+                { root: 392.00, notes: [493.88, 587.33, 783.99] },
+                { root: 329.63, notes: [392.00, 493.88, 659.25] }
+            ];
+            let chord = chords[bar];
+            if (beatInBar === 0) {
+                playSynth(chord.root / 2, time, beatTime * 2, 'triangle', 0.1, 0.05, 0.2);
+            }
+            playSynth(chord.notes[beatInBar % chord.notes.length], time, beatTime * 0.5, 'triangle', 0.05, 0.02, 0.15);
+
+        } else if (bgmType === 'battle') {
+            // 戦闘BGM
+            const chords = [
+                { root: 146.83, notes: [174.61, 220.00, 293.66] },
+                { root: 116.54, notes: [146.83, 174.61, 233.08] },
+                { root: 196.00, notes: [233.08, 293.66, 392.00] },
+                { root: 220.00, notes: [277.18, 329.63, 440.00] }
+            ];
+            let chord = chords[bar];
+            if (beatInBar === 0) {
+                playSynth(chord.root / 2, time, beatTime * 4, 'sawtooth', 0.1, 0.05, 0.2);
+                playSynth(chord.root, time, beatTime * 4, 'sine', 0.12, 0.05, 0.2);
+            }
+            playSynth(chord.notes[beatInBar % chord.notes.length], time, beatTime * 0.4, 'triangle', 0.06, 0.02, 0.1);
+            if (beatInBar === 2) {
+                playSynth(chord.notes[(beatInBar + 1) % chord.notes.length] * 1.5, time, beatTime * 0.4, 'sawtooth', 0.04, 0.02, 0.1);
+            }
+        }
+    }
+
+    function startSystem() {
+        document.getElementById('audio-trigger').style.display = 'none';
+        initAudio();
+        playSplash();
+    }
+
+    function playSplash() {
+        const splash = document.createElement('div');
+        splash.style.position = 'fixed';
+        splash.style.top = '0'; splash.style.left = '0';
+        splash.style.width = '100vw'; splash.style.height = '100vh';
+        splash.style.backgroundColor = '#000';
+        splash.style.display = 'flex'; splash.style.justifyContent = 'center'; splash.style.alignItems = 'center';
+        splash.style.zIndex = '99999';
+        splash.style.transition = 'opacity 1s ease';
+
+        const logoText = document.createElement('div');
+        logoText.innerText = 'Yutararu Presents';
+        logoText.style.color = '#ffffff'; logoText.style.fontSize = '32px';
+        logoText.style.fontWeight = 'bold'; logoText.style.letterSpacing = '4px'; logoText.style.opacity = '0';
+        logoText.style.transition = 'opacity 1.5s ease';
+
+        splash.appendChild(logoText);
+        document.body.appendChild(splash);
+
+        setTimeout(() => { logoText.style.opacity = '1'; }, 200);
+        setTimeout(() => { splash.style.opacity = '0'; }, 2500);
+        setTimeout(() => { splash.remove(); }, 3500);
+        changeScreen('screen-title');
+    }
+
+    // === 画面切り替え ===
+    function changeScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        
+        if(screenId === 'screen-town') {
+            updateTownUI();
+            checkLoginBonus(); // タウン表示時にログインボーナス判定
+        }
+        
+        // 各画面IDに応じた個別BGMの再生分岐
+        if (screenId === 'screen-title') {
+            startBgm('title');
+        } else if (screenId === 'screen-town') {
+            startBgm('town');
+        } else if (screenId === 'screen-shop') {
+            startBgm('shop');
+        } else if (screenId === 'screen-battle') {
+            startBgm('battle');
+        }
+    }
+
+    function updateTownUI() {
+        if(player.worldIndex === undefined) player.worldIndex = 0;
+        if(player.stageIndex === undefined) player.stageIndex = 1;
+
+        document.getElementById('town-hp').innerText = player.hp;
+        document.getElementById('town-gold').innerText = player.gold;
+        
+        let totalCards = 0;
+        for (let c in player.inventoryCards) totalCards += player.inventoryCards[c];
+        document.getElementById('deck-count').innerText = totalCards;
+
+        // 萬屋の所持数UI更新
+        ['tea', 'ink', 'scroll', 'talisman', 'dictionary', 'brush'].forEach(key => {
+            document.getElementById(`own-${key}`).innerText = player.items[key] || 0;
+        });
+
+        // 進行度の更新
+        let currentWorld = WORLD_DATA[player.worldIndex];
+        document.getElementById('town-progress').innerText = `${currentWorld.num}ノ域「${currentWorld.name}」 (${player.stageIndex}/5)`;
+    }
+
+    // === 萬屋での購入 ===
+    function buyItem(itemKey, price) {
+        if (player.gold >= price) {
+            player.gold -= price;
+            if (!player.items[itemKey]) player.items[itemKey] = 0;
+            player.items[itemKey]++;
+            updateTownUI();
+        } else {
+            alert("ゴールドが足りません！");
+        }
+    }
+
+    // === 漢字屋（ショップ） ===
+    function openShop() {
+        changeScreen('screen-shop');
+        updateShopUI();
+    }
+
+    function updateShopUI() {
+        document.getElementById('shop-gold').innerText = player.gold;
+        const container = document.getElementById('shop-container');
+        container.innerHTML = "";
+
+        for (let card in cardDatabase) {
+            const info = cardDatabase[card];
+            const itemEl = document.createElement('div');
+            itemEl.className = "shop-item";
+            itemEl.innerHTML = `
+                <div style="font-size:24px; font-weight:bold;">${card}</div>
+                <div style="font-size:10px; color:#aaa;">${info.type === 'hen' ? 'へん' : 'つくり'}</div>
+                <div style="font-size:12px; color:#f1c40f; margin-top:5px;">${info.price}G</div>
+                <div style="font-size:10px; color:#2ecc71;">所持:${player.inventoryCards[card] || 0}</div>
+            `;
+            itemEl.onclick = () => buyCard(card);
+            container.appendChild(itemEl);
+        }
+    }
+
+    function buyCard(card) {
+        const price = cardDatabase[card].price;
+        if (player.gold >= price) {
+            player.gold -= price;
+            if (!player.inventoryCards[card]) player.inventoryCards[card] = 0;
+            player.inventoryCards[card]++;
+            updateShopUI();
+        } else {
+            alert("ゴールドが足りません！");
+        }
+    }
+    /* ==================================
+       新規追加：ワールドデータ
+    ================================== */
+    const WORLD_DATA = [
+        { num: "壱", name: "宵闇の街道", baseHp: 50 },
+        { num: "弐", name: "忘却の荒野", baseHp: 120 },
+        { num: "参", name: "神隠しの社", baseHp: 250 },
+        { num: "肆", name: "羅刹の竹林", baseHp: 500 },
+        { num: "伍", name: "阿修羅の溶岩洞", baseHp: 900 },
+        { num: "幻", name: "幻夢の空中庭園", baseHp: 1500 },
+        { num: "絶", name: "絶対零度の氷壁", baseHp: 2500 },
+        { num: "極", name: "極光の天守閣", baseHp: 5000 }
+    ];
+
+    /* ==================================
+       ゲームシステム＆プレイヤーデータ
+    ================================== */
+    let defaultPlayer = {
+        gold: 300,
+        hp: 100,
+        maxHp: 100,
+        inventoryCards: { "木": 3, "氵": 3, "亻": 3, "毎": 3, "可": 3, "同": 3 },
+        items: { ink: 0, scroll: 0, talisman: 0, dictionary: 0, tea: 0, brush: 0 },
+        worldIndex: 0,
+        stageIndex: 1
+    };
+
+    let player = JSON.parse(JSON.stringify(defaultPlayer));
+
+    const cardDatabase = {
+        "木": { type: "hen", price: 30 },
+        "氵": { type: "hen", price: 30 },
+        "亻": { type: "hen", price: 30 },
+        "言": { type: "hen", price: 50 },
+        "火": { type: "hen", price: 50 },
+        "日": { type: "hen", price: 50 },
+        "土": { type: "hen", price: 40 },
+        "金": { type: "hen", price: 60 },
+        "毎": { type: "tsukuri", price: 30 },
+        "可": { type: "tsukuri", price: 30 },
+        "同": { type: "tsukuri", price: 30 },
+        "吾": { type: "tsukuri", price: 50 },
+        "丁": { type: "tsukuri", price: 40 },
+        "青": { type: "tsukuri", price: 50 },
+        "里": { type: "tsukuri", price: 40 },
+        "重": { type: "tsukuri", price: 60 },
+        "主": { type: "tsukuri", price: 40 }
+    };
+
+    const kanjiCombination = {
+        "木-毎": "梅", "氵-毎": "海", "亻-毎": "侮",
+        "木-可": "柯", "氵-可": "河", "亻-可": "何",
+        "木-同": "胴", "氵-同": "洞", "亻-同": "同",
+        "言-吾": "語", "火-丁": "灯", "日-丁": "町",
+        "言-丁": "訂", "氵-青": "清", "日-青": "晴",
+        "木-主": "柱", "氵-主": "注", "亻-主": "住",
+        "土-里": "埋", "金-里": "鯉", "金-同": "銅", "金-重": "鐘"
+    };
+
+    const specialCombos = {
+        "何時": 50, "時計": 50, "打灯": 40, "詩語": 50, "消化": 80,
+        "清海": 60, "好詩": 60, "好晴": 60, "時鐘": 70, "柱時": 50
+    };
+
+    let battle = { active: false, enemyHp: 150, enemyMaxHp: 150 };
+    let drawPile = [];
+    let playerHand = [];
+    let selectedHenIdx = null;
+    let selectedTsukuriIdx = null;
+    let craftedKanjis = [];
+    let isCriticalNext = false;
+
+    // === セーブ＆ロード ===
+    function startGame() {
+        player = JSON.parse(JSON.stringify(defaultPlayer));
+        changeScreen('screen-town');
+    }
+
+    function saveGame() {
+        localStorage.setItem('kokugoRpgSave_v3', JSON.stringify(player));
+        alert("冒険の記録（セーブ）が完了しました！");
+    }
+
+    function loadGameFromTitle() {
+        const savedData = localStorage.getItem('kokugoRpgSave_v3');
+        if (savedData) {
+            player = JSON.parse(savedData);
+            if(!player.items) player.items = { ink: 0, scroll: 0, talisman: 0, dictionary: 0, tea: 0, brush: 0 };
+            if(!player.hp) { player.hp = 100; player.maxHp = 100; }
+            if(player.worldIndex === undefined) player.worldIndex = 0;
+            if(player.stageIndex === undefined) player.stageIndex = 1;
+            changeScreen('screen-town');
+        } else {
+            alert("セーブデータがありません。「初めから」を選んでください。");
+        }
+    }
+
+    // === 新規追加：ログインボーナスチェック ===
+    function checkLoginBonus() {
+        const today = new Date().toISOString().split('T')[0];
+        const lastLogin = localStorage.getItem('kokugoRpgLastLogin');
+        
+        if (lastLogin !== today) {
+            localStorage.setItem('kokugoRpgLastLogin', today);
+            player.gold += 150;
+            alert("【 日日是好日・ログインボーナス 】\n新たな一日の修業が始まります！\n天から軍資金として 150G を授かりました！");
+            updateTownUI();
+        }
+    }
+
+    // === 画面切り替え ===
+    function changeScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        
+        if(screenId === 'screen-town') {
+            updateTownUI();
+            checkLoginBonus(); // タウン表示時にログインボーナス判定
+        }
+        
+        if (screenId === 'screen-battle') {
+            startBgm('battle');
+        } else if (screenId === 'screen-title' || screenId === 'screen-town' || screenId === 'screen-shop') {
+            if (audioCtx) startBgm('normal');
+        }
+    }
+
+    function updateTownUI() {
+        if(player.worldIndex === undefined) player.worldIndex = 0;
+        if(player.stageIndex === undefined) player.stageIndex = 1;
+
+        document.getElementById('town-hp').innerText = player.hp;
+        document.getElementById('town-gold').innerText = player.gold;
+        
+        let totalCards = 0;
+        for (let c in player.inventoryCards) totalCards += player.inventoryCards[c];
+        document.getElementById('deck-count').innerText = totalCards;
+
+        // 萬屋の所持数UI更新
+        ['tea', 'ink', 'scroll', 'talisman', 'dictionary', 'brush'].forEach(key => {
+            document.getElementById(`own-${key}`).innerText = player.items[key] || 0;
+        });
+
+        // 進行度の更新
+        let currentWorld = WORLD_DATA[player.worldIndex];
+        document.getElementById('town-progress').innerText = `${currentWorld.num}ノ域「${currentWorld.name}」 (${player.stageIndex}/5)`;
+    }
+
+    // === 萬屋での購入 ===
+    function buyItem(itemKey, price) {
+        if (player.gold >= price) {
+            player.gold -= price;
+            if (!player.items[itemKey]) player.items[itemKey] = 0;
+            player.items[itemKey]++;
+            updateTownUI();
+        } else {
+            alert("ゴールドが足りません！");
+        }
+    }
+
+    // === 漢字屋（ショップ） ===
+    function openShop() {
+        changeScreen('screen-shop');
+        updateShopUI();
+    }
+
+    function updateShopUI() {
+        document.getElementById('shop-gold').innerText = player.gold;
+        const container = document.getElementById('shop-container');
+        container.innerHTML = "";
+
+        for (let card in cardDatabase) {
+            const info = cardDatabase[card];
+            const itemEl = document.createElement('div');
+            itemEl.className = "shop-item";
+            itemEl.innerHTML = `
+                <div style="font-size:24px; font-weight:bold;">${card}</div>
+                <div style="font-size:10px; color:#aaa;">${info.type === 'hen' ? 'へん' : 'つくり'}</div>
+                <div style="font-size:12px; color:#f1c40f; margin-top:5px;">${info.price}G</div>
+                <div style="font-size:10px; color:#2ecc71;">所持:${player.inventoryCards[card] || 0}</div>
+            `;
+            itemEl.onclick = () => buyCard(card);
+            container.appendChild(itemEl);
+        }
+    }
+
+    function buyCard(card) {
+        const price = cardDatabase[card].price;
+        if (player.gold >= price) {
+            player.gold -= price;
+            if (!player.inventoryCards[card]) player.inventoryCards[card] = 0;
+            player.inventoryCards[card]++;
+            updateShopUI();
+        } else {
+            alert("ゴールドが足りません！");
+        }
+    }
+
+    /* ==================================
+       戦闘システム（ワールド＆ボス対応版）
+    ================================== */
+    function startBattle() {
+        if(player.worldIndex === undefined) player.worldIndex = 0;
+        if(player.stageIndex === undefined) player.stageIndex = 1;
+
+        let currentWorld = WORLD_DATA[player.worldIndex];
+        let isBoss = (player.stageIndex === 5);
+        let multiplier = player.stageIndex;
+
+        battle.active = true;
+        isCriticalNext = false;
+        selectedHenIdx = null;
+        selectedTsukuriIdx = null;
+        craftedKanjis = [];
+        updateCraftedDisplay();
+        document.getElementById('battle-message').innerText = "パーツを選んで漢字を錬金しよう！";
+
+        // === ボス戦限定：天の導き（カード補給システム） ===
+        if (isBoss) {
+            multiplier += 3; // ボスは大幅HP強化
+            for (let card in player.inventoryCards) {
+                player.inventoryCards[card] += 2; // 手持ちカードの限界突破補給
+            }
+            alert(`【 主（ボス）襲来：${currentWorld.name}の守護者 】\n天の言霊が共鳴する…！「天の導き」により、手持ちの全ての漢字パーツが2枚ずつ一時補給された！`);
+            document.getElementById('enemy-name').innerText = `【主】${currentWorld.name}の守護者`;
+        } else {
+            document.getElementById('enemy-name').innerText = `【妖】彷徨う言霊 (第${player.stageIndex}階層)`;
+        }
+
+        // 敵HPの設定
+        battle.enemyHp = currentWorld.baseHp * multiplier;
+        battle.enemyMaxHp = battle.enemyHp;
+
+        // 山札構築
+        drawPile = [];
+        for (let card in player.inventoryCards) {
+            let count = player.inventoryCards[card];
+            let type = cardDatabase[card].type;
+            for(let i=0; i<count; i++) drawPile.push({ text: card, type: type });
+        }
+        
+        drawPile.sort(() => Math.random() - 0.5);
+        playerHand = [];
+        drawCards(5);
+        updateBattleUI();
+        changeScreen('screen-battle');
+    }
+
+    function updateBattleUI() {
+        document.getElementById('enemy-hp').innerText = `${battle.enemyHp} / ${battle.enemyMaxHp}`;
+        document.getElementById('battle-player-hp').innerText = player.hp;
+        ['tea', 'ink', 'scroll', 'dictionary', 'brush'].forEach(key => {
+            document.getElementById(`b-${key}`).innerText = player.items[key] || 0;
+        });
+    }
+
+    function drawCards(count) {
+        for(let i=0; i<count; i++) {
+            if (drawPile.length > 0) playerHand.push(drawPile.pop());
+        }
+        updateHandUI();
+    }
+
+    function updateHandUI() {
+        const handArea = document.getElementById('player-hand');
+        handArea.innerHTML = "";
+        document.getElementById('draw-pile-count').innerText = drawPile.length;
+        
+        playerHand.forEach((card, idx) => {
+            const cardEl = document.createElement('div');
+            cardEl.className = "card";
+            if (selectedHenIdx === idx || selectedTsukuriIdx === idx) cardEl.classList.add('selected');
+            cardEl.innerHTML = `
+                <div style="font-size: 24px;">${card.text}</div>
+                <div class="card-type">${card.type === 'hen' ? 'へん' : 'つくり'}</div>
+            `;
+            cardEl.onclick = () => selectCard(idx);
+            handArea.appendChild(cardEl);
+        });
+    }
+
+    function selectCard(idx) {
+        const card = playerHand[idx];
+        if (card.type === 'hen') {
+            selectedHenIdx = (selectedHenIdx === idx) ? null : idx;
+            document.getElementById('slot-hen').innerText = selectedHenIdx !== null ? card.text : "へん";
+            document.getElementById('slot-hen').style.borderStyle = selectedHenIdx !== null ? "solid" : "dashed";
+        } else {
+            selectedTsukuriIdx = (selectedTsukuriIdx === idx) ? null : idx;
+            document.getElementById('slot-tsukuri').innerText = selectedTsukuriIdx !== null ? card.text : "つくり";
+            document.getElementById('slot-tsukuri').style.borderStyle = selectedTsukuriIdx !== null ? "solid" : "dashed";
+        }
+        updateHandUI();
+    }
+
+    function combineCards() {
+        if (selectedHenIdx === null || selectedTsukuriIdx === null) {
+            document.getElementById('battle-message').innerText = "「へん」と「つくり」を両方選んでください！";
+            return;
+        }
+        const henCard = playerHand[selectedHenIdx];
+        const tsukuriCard = playerHand[selectedTsukuriIdx];
+        const key = `${henCard.text}-${tsukuriCard.text}`;
+        
+        if (kanjiCombination[key]) {
+            const newKanji = kanjiCombination[key];
+            craftedKanjis.push(newKanji);
+            document.getElementById('battle-message').innerText = `錬金成功！「${newKanji}」を生み出した！`;
+            
+            let first = Math.max(selectedHenIdx, selectedTsukuriIdx);
+            let second = Math.min(selectedHenIdx, selectedTsukuriIdx);
+            playerHand.splice(first, 1);
+            playerHand.splice(second, 1);
+            
+            selectedHenIdx = null; selectedTsukuriIdx = null;
+            document.getElementById('slot-hen').innerText = "へん";
+            document.getElementById('slot-tsukuri').innerText = "つくり";
+            document.getElementById('slot-hen').style.borderStyle = "dashed";
+            document.getElementById('slot-tsukuri').style.borderStyle = "dashed";
+            
+            updateCraftedDisplay();
+            drawCards(2);
+        } else {
+            document.getElementById('battle-message').innerText = "その組み合わせでは漢字が作れない！";
+            takePlayerDamage(3); // ミスによる小ダメージ反撃
+        }
+    }
+
+    function updateCraftedDisplay() {
+        const display = document.getElementById('crafted-kanji-display');
+        display.innerText = craftedKanjis.length === 0 ? "ーー" : craftedKanjis.join("");
+    }
+
+    function attackWithWord() {
+        if (craftedKanjis.length === 0) return;
+
+        let word = craftedKanjis.join("");
+        let damage = 0;
+
+        if (craftedKanjis.length === 1) {
+            damage = 15;
+            document.getElementById('battle-message').innerText = `単体攻撃「${word}」！ ${damage} ダメージ！`;
+        } else {
+            if (specialCombos[word]) {
+                damage = specialCombos[word];
+                document.getElementById('battle-message').innerText = `熟語コンボ「${word}」炸裂！！ ${damage} ダメージ！！`;
+            } else {
+                damage = 30;
+                document.getElementById('battle-message').innerText = `熟語攻撃「${word}」！ ${damage} ダメージ！`;
+            }
+        }
+
+        if (isCriticalNext) {
+            damage = damage * 3;
+            document.getElementById('battle-message').innerText += `【墨汁クリティカル】威力が3倍( ${damage} )に跳ね上がった！！`;
+            isCriticalNext = false;
+        }
+
+        battle.enemyHp -= damage;
+        craftedKanjis = [];
+        updateCraftedDisplay();
+        checkEnemyDeath();
+    }
+
+    // === 新規拡張：戦闘勝利時の進行判定 ===
+    function checkEnemyDeath() {
+        if(battle.enemyHp < 0) battle.enemyHp = 0;
+        document.getElementById('enemy-hp').innerText = `${battle.enemyHp} / ${battle.enemyMaxHp}`;
+
+        if (battle.enemyHp <= 0) {
+            setTimeout(() => {
+                let currentWorld = WORLD_DATA[player.worldIndex];
+                let isBoss = (player.stageIndex === 5);
+
+                if (isBoss) {
+                    alert(`【 試練突破 】\n見事、${currentWorld.num}ノ域の守護者を討ち果たした！\n報酬として 300G を手に入れた！`);
+                    player.gold += 300;
+                } else {
+                    alert("試練をクリアした！ 100G を手に入れた！");
+                    player.gold += 100;
+                }
+
+                // ステージ進行処理
+                player.stageIndex++;
+                if (player.stageIndex > 5) {
+                    player.stageIndex = 1;
+                    player.worldIndex++;
+                    
+                    if (player.worldIndex >= WORLD_DATA.length) {
+                        alert("【 祝・国語RPG 完全制覇 】\n全てのワールドの試練を乗り越え、言霊の頂点に立った！\nおめでとうございます！完全クリアです！");
+                        player.worldIndex = 0;
+                    } else {
+                        let nextWorld = WORLD_DATA[player.worldIndex];
+                        alert(`【 昇界 】\nワールドクリア！\n新たな領域、${nextWorld.num}ノ域「${nextWorld.name}」への道が開かれた！`);
+                    }
+                } else {
+                    alert(`討伐成功！ 次のステージへ進みます。（現在：第${player.stageIndex}ステージ）`);
+                }
+
+                // 勝利時に自動セーブ
+                localStorage.setItem('kokugoRpgSave_v3', JSON.stringify(player));
+                
+                battle.active = false;
+                changeScreen('screen-town');
+            }, 500);
+        }
+    }
+
+    function takePlayerDamage(amount) {
+        player.hp -= amount;
+        if (player.hp <= 0) {
+            if (player.items.talisman && player.items.talisman > 0) {
+                player.items.talisman--;
+                player.hp = 1;
+                document.getElementById('battle-message').innerText = "危機一髪！【身代わり札】が身代わりとなり、HP 1 で耐えた！";
+            } else {
+                player.hp = 0;
+                alert("体力が尽きてしまった…！ 修業の里へ撤退します。");
+                battle.active = false;
+                player.hp = 50; // リハビリHP
+                changeScreen('screen-town');
+            }
+        }
+        updateBattleUI();
+    }
+
+    function redrawHand() {
+        if (playerHand.length === 0 && drawPile.length === 0) return;
+        selectedHenIdx = null; selectedTsukuriIdx = null;
+        document.getElementById('slot-hen').innerText = "へん";
+        document.getElementById('slot-tsukuri').innerText = "つくり";
+        document.getElementById('slot-hen').style.borderStyle = "dashed";
+        document.getElementById('slot-tsukuri').style.borderStyle = "dashed";
+
+        while(playerHand.length > 0) drawPile.push(playerHand.pop());
+        drawPile.sort(() => Math.random() - 0.5);
+        let drawCount = Math.min(5, drawPile.length);
+        drawCards(drawCount);
+        document.getElementById('battle-message').innerText = "山札をシャッフルした！隙を突かれて 5 ダメージ！";
+        takePlayerDamage(5);
+    }
+
+    // === バトルアイテムの使用 ===
+    function useBattleItem(itemKey) {
+        if (!battle.active || battle.enemyHp <= 0) return;
+        if (!player.items[itemKey] || player.items[itemKey] <= 0) {
+            document.getElementById('battle-message').innerText = "そのアイテムを持っていません！";
+            return;
+        }
+
+        player.items[itemKey]--;
+        updateBattleUI();
+
+        switch(itemKey) {
+            case 'tea':
+                player.hp += 50;
+                if(player.hp > player.maxHp) player.hp = player.maxHp;
+                document.getElementById('battle-message').innerText = "文豪の茶を飲んだ。自分のHPが 50 回復！";
+                updateBattleUI();
+                break;
+            case 'ink':
+                isCriticalNext = true;
+                document.getElementById('battle-message').innerText = "濃縮墨汁を使用した！次の一撃の威力が3倍になる！";
+                break;
+            case 'scroll':
+                // 現手札で合体可能な組み合わせを1つ教える
+                let found = false;
+                for(let i=0; i<playerHand.length; i++) {
+                    for(let j=0; j<playerHand.length; j++) {
+                        if(playerHand[i].type === 'hen' && playerHand[j].type === 'tsukuri') {
+                            let k = `${playerHand[i].text}-${playerHand[j].text}`;
+                            if(kanjiCombination[k]) {
+                                document.getElementById('battle-message').innerText = `巻物の啓示：「${playerHand[i].text}」と「${playerHand[j].text}」が合体できそうだぞ！`;
+                                found = true; break;
+                            }
+                        }
+                    }
+                    if(found) break;
+                }
+                if(!found) document.getElementById('battle-message').innerText = "巻物の啓示：現在の札では何も錬金できないようだ…！";
+                break;
+            case 'dictionary':
+                let cut = Math.floor(battle.enemyHp / 2);
+                battle.enemyHp -= cut;
+                if(battle.enemyHp < 1) battle.enemyHp = 1;
+                document.getElementById('battle-message').innerText = `禁断 of 字典を開放！敵のHPを半分（-${cut}）にした！`;
+                checkEnemyDeath();
+                break;
+            case 'brush':
+                battle.enemyHp = 0;
+                document.getElementById('battle-message').innerText = "奥義、神筆・鳳凰！！敵の息の根を一瞬で止めた！！";
+                checkEnemyDeath();
+                break;
+        }
+    }
+
+
+</script>
+</body>
+</html>
