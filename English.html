@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBER RELIC - 英語RPG Ver.6.0</title>
+    <title>CYBER RELIC - 英語RPG Ver.5.5 [Story & Tutorial Ed.]</title>
     <style>
         /* === ブライト・サイバースタイル (白＆青基調) === */
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -15,14 +15,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            overflow: hidden;
+            padding: 20px;
+            overflow: auto;
             user-select: none;
             background-image: 
                 linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
             background-size: 30px 30px;
+            box-sizing: border-box;
         }
 
         #game-app {
@@ -36,6 +38,7 @@
             display: flex;
             flex-direction: column;
             border-radius: 4px;
+            flex-shrink: 0;
         }
 
         .screen {
@@ -49,6 +52,7 @@
         
         .screen.active { display: flex; }
 
+        /* 視認性の高いサイバーフレーム */
         .cyber-frame {
             border: 1px solid #00e5ff;
             background: rgba(0, 229, 255, 0.05);
@@ -62,6 +66,7 @@
             box-shadow: inset 0 0 20px rgba(255, 51, 102, 0.2);
         }
 
+        /* 明るく見やすいボタン */
         .btn {
             background: #001a33;
             color: #00e5ff;
@@ -97,10 +102,12 @@
             box-shadow: 0 0 15px #ff3366;
         }
 
+        /* タイトル文字 */
         .title-container { text-align: center; margin-top: 100px; }
         .title-main { font-size: 64px; color: #ffffff; text-shadow: 0 0 20px #00e5ff; margin: 0; letter-spacing: 12px; }
         .title-sub { font-size: 18px; color: #00e5ff; letter-spacing: 8px; margin-top: 10px; }
 
+        /* グラフィック（図形） */
         #enemy-container { height: 160px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
         
         .enemy-minion {
@@ -123,31 +130,36 @@
         @keyframes Float { 0% { transform: rotate(45deg) translateY(0px); } 100% { transform: rotate(45deg) translateY(-15px); } }
         @keyframes BossSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* バトル課題エリア */
         #battle-area { flex: 1; border: 2px solid #00e5ff; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 20, 40, 0.6); padding: 10px; }
         
-        #typing-container { font-size: 54px; font-weight: bold; letter-spacing: 8px; display: none; text-align: center; }
+        /* タイピングの視認性強化 */
+        #typing-container { font-size: 46px; font-weight: bold; letter-spacing: 6px; display: none; text-align: center; }
         .typed { color: #00e5ff; text-shadow: 0 0 12px #00e5ff; }
         .untyped { color: #ffffff; text-shadow: 2px 2px 4px #000; }
 
         #classify-container { display: none; text-align: center; }
-        #classify-word { font-size: 54px; font-weight: bold; letter-spacing: 6px; margin-bottom: 30px; color: #ffffff; text-shadow: 0 0 15px #00e5ff; }
+        #classify-word { font-size: 46px; font-weight: bold; letter-spacing: 6px; margin-bottom: 20px; color: #ffffff; text-shadow: 0 0 15px #00e5ff; }
 
-        /* 新規追加：穴埋め問題用のスタイル */
         #fill-blank-container { display: none; text-align: center; width: 100%; }
-        #fill-sentence { font-size: 28px; font-weight: bold; margin-bottom: 30px; color: #ffffff; text-shadow: 0 0 15px #00e5ff; word-wrap: break-word; padding: 0 20px; }
-        #fill-choices { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        #fill-sentence { font-size: 22px; font-weight: bold; margin-bottom: 20px; color: #ffffff; text-shadow: 0 0 15px #00e5ff; word-wrap: break-word; padding: 0 20px; line-height: 1.4; }
+        #fill-choices { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
-        #message-box { height: 100px; border: 2px solid #00e5ff; padding: 15px; font-size: 18px; line-height: 1.6; background: #000; color: #ffffff; font-weight: bold; overflow-y: auto; }
+        /* メッセージボックス */
+        #message-box { height: 100px; border: 2px solid #00e5ff; padding: 15px; font-size: 17px; line-height: 1.6; background: #000; color: #ffffff; font-weight: bold; overflow-y: auto; }
 
+        /* ローディング画面 */
         #loading-bar-container { width: 80%; height: 24px; border: 3px solid #00e5ff; margin: 30px auto; position: relative; background: #001a33; }
         #loading-bar { width: 0%; height: 100%; background: #00e5ff; box-shadow: 0 0 15px #00e5ff; }
 
+        /* グリッドレイアウト */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .panel { border: 1px solid #00e5ff; padding: 20px; background: rgba(0, 229, 255, 0.05); display: flex; flex-direction: column; justify-content: space-between; }
         .panel-title { font-size: 20px; font-weight: bold; color: #ffffff; margin-bottom: 10px; }
         .panel-desc { font-size: 14px; color: #aaddff; margin-bottom: 20px; height: 40px; line-height: 1.4; }
 
+        /* 起動システム */
         #audio-trigger { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100000; display: flex; justify-content: center; align-items: center; cursor: pointer; }
     </style>
 </head>
@@ -172,6 +184,29 @@
             </div>
         </div>
 
+        <div id="screen-lang" class="screen" style="justify-content: center; align-items: center;">
+            <div class="cyber-frame" style="text-align: center; width: 80%;">
+                <h2 style="color: #ffffff; letter-spacing: 4px; margin-top: 0;">SELECT SYSTEM LANGUAGE</h2>
+                <p style="color: #00e5ff; margin-bottom: 40px; font-size: 16px;">ゲーム内で表示されるストーリーや解説の言語を選択してください。</p>
+                <div style="display: flex; justify-content: center; gap: 20px;">
+                    <button class="btn" style="font-size: 20px; padding: 15px 30px;" onclick="selectLanguage('ja')">日本語 (JAPANESE)</button>
+                    <button class="btn" style="font-size: 20px; padding: 15px 30px;" onclick="selectLanguage('en')">ENGLISH</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-story" class="screen" style="justify-content: center; align-items: center;">
+            <div class="cyber-frame" style="width: 80%; min-height: 320px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; padding: 30px;">
+                <div>
+                    <h3 id="story-title" style="color: #00e5ff; letter-spacing: 3px; margin-top: 0; font-size: 22px;">// SYSTEM INITIALIZATION</h3>
+                    <p id="story-text" style="color: #ffffff; font-size: 18px; line-height: 1.8; white-space: pre-wrap; margin-top: 20px;"></p>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button class="btn" id="story-btn" onclick="exitStory()">ENTER TERMINAL &gt;&gt;</button>
+                </div>
+            </div>
+        </div>
+
         <div id="screen-town" class="screen">
             <div class="cyber-frame" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -186,10 +221,12 @@
             
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px dashed #00e5ff; margin-bottom: 20px; background: rgba(0, 229, 255, 0.02);">
                 <div style="margin-bottom: 30px; font-size: 18px; color: #aaddff; letter-spacing: 2px;">SELECT COMMAND</div>
+                
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
                     <button class="btn btn-danger" id="btn-dive" onclick="prepareBattle()">GATE DIVE (EXPLORE)</button>
                     <button class="btn" onclick="changeScreen('screen-shop')">BLACK MARKET (SHOP)</button>
                     <button class="btn" onclick="changeScreen('screen-skills')">KERNEL MATRIX (SKILLS)</button>
+                    
                     <button class="btn" style="border-color: #ffff00; color: #ffff00;" onclick="manualSave()">SYSTEM SAVE (セーブ)</button>
                     <button class="btn" style="border-color: #888888; color: #888888;" onclick="changeScreen('screen-title')">LOGOUT (タイトルへ)</button>
                 </div>
@@ -294,6 +331,14 @@
                     <div id="enemy-sprite"></div>
                 </div>
                 
+                <div id="tutorial-container" style="display: none; text-align: left; padding: 20px; border: 1px dashed #ffff00; background: rgba(0, 10, 20, 0.95); width: 90%; box-shadow: 0 0 20px rgba(255,255,0,0.2); box-sizing: border-box;">
+                    <h3 id="tutorial-title" style="color: #ffff00; margin-top: 0; letter-spacing: 2px; font-size: 20px;">[ LAYER PROTOCOL TUTORIAL ]</h3>
+                    <p id="tutorial-text" style="color: #ffffff; font-size: 15px; line-height: 1.6; margin-bottom: 25px; white-space: pre-wrap;"></p>
+                    <div style="text-align: center;">
+                        <button class="btn" style="border-color: #ffff00; color: #ffff00;" onclick="closeTutorial()">BEGIN HACKING [了解]</button>
+                    </div>
+                </div>
+                
                 <div id="typing-container">
                     <div id="typing-word"></div>
                 </div>
@@ -301,8 +346,8 @@
                 <div id="classify-container">
                     <div id="classify-word"></div>
                     <div>
-                        <button class="btn" onclick="checkClassification('noun')">NOUN [名詞]</button>
-                        <button class="btn" onclick="checkClassification('verb')">VERB [動詞]</button>
+                        <button class="btn" onclick="checkClassification('regular')">REGULAR [規則動詞 (-ed)]</button>
+                        <button class="btn" onclick="checkClassification('irregular')">IRREGULAR [不規則動詞]</button>
                     </div>
                 </div>
 
@@ -317,107 +362,222 @@
     </div>
 
 <script>
-    /* ==================================
-        難易度別 英単語データベース
-    ================================== */
-    const wordLevels = [
-        [ {en:"data", type:"noun"}, {en:"code", type:"noun"}, {en:"user", type:"noun"}, {en:"bug", type:"noun"}, {en:"link", type:"noun"}, {en:"save", type:"verb"}, {en:"run", type:"verb"}, {en:"play", type:"verb"}, {en:"move", type:"verb"} ],
-        [ {en:"system", type:"noun"}, {en:"memory", type:"noun"}, {en:"server", type:"noun"}, {en:"error", type:"noun"}, {en:"update", type:"verb"}, {en:"delete", type:"verb"}, {en:"search", type:"verb"}, {en:"clear", type:"verb"} ],
-        [ {en:"network", type:"noun"}, {en:"program", type:"noun"}, {en:"command", type:"noun"}, {en:"browser", type:"noun"}, {en:"connect", type:"verb"}, {en:"install", type:"verb"}, {en:"execute", type:"verb"}, {en:"compile", type:"verb"} ],
-        [ {en:"terminal", type:"noun"}, {en:"database", type:"noun"}, {en:"password", type:"noun"}, {en:"firewall", type:"noun"}, {en:"download", type:"verb"}, {en:"optimize", type:"verb"}, {en:"generate", type:"verb"}, {en:"transfer", type:"verb"} ],
-        [ {en:"algorithm", type:"noun"}, {en:"protocol", type:"noun"}, {en:"encryption", type:"noun"}, {en:"framework", type:"noun"}, {en:"encrypt", type:"verb"}, {en:"override", type:"verb"}, {en:"authenticate", type:"verb"} ]
+    /* ===================================================
+        Basic Grammar in Use Unit 10-15 データベース
+    =================================================== */
+    const verbDataPool = [
+        { base: "work", past: "worked", type: "regular" },
+        { base: "clean", past: "cleaned", type: "regular" },
+        { base: "start", past: "started", type: "regular" },
+        { base: "stay", past: "stayed", type: "regular" },
+        { base: "happen", past: "happened", type: "regular" },
+        { base: "go", past: "went", type: "irregular" },
+        { base: "get", past: "got", type: "irregular" },
+        { base: "see", past: "saw", type: "irregular" },
+        { base: "have", past: "had", type: "irregular" },
+        { base: "buy", past: "bought", type: "irregular" },
+        { base: "eat", past: "ate", type: "irregular" },
+        { base: "make", past: "made", type: "irregular" },
+        { base: "find", past: "found", type: "irregular" },
+        { base: "break", past: "broke", type: "irregular" },
+        { base: "come", past: "came", type: "irregular" }
     ];
 
-    /* ==================================
-        【新規】難易度別 穴埋め問題データベース
-    ================================== */
-    const fillBlankLevels = [
-        // Lv 0 (World 1) : 基礎 (be動詞、代名詞、簡単な疑問文)
+    const grammarFillBlankPool = [
+        // World 1 (Unit 10: was / were)
         [
-            { sentence: "I [ ___ ] a programmer.", choices: ["am", "is", "are", "be"], correct: "am" },
-            { sentence: "This [ ___ ] my computer.", choices: ["am", "is", "are", "do"], correct: "is" },
-            { sentence: "Do you like games? - Yes, I [ ___ ].", choices: ["am", "do", "like", "are"], correct: "do" },
-            { sentence: "Look at [ ___ ] dog. It's cute.", choices: ["that", "those", "they", "them"], correct: "that" },
-            { sentence: "She [ ___ ] an apple every morning.", choices: ["eat", "eats", "eating", "ate"], correct: "eats" }
+            { sentence: "Yesterday Tiffany [ ___ ] at work. She was sick in bed.", choices: ["wasn't", "was", "weren't", "were"], correct: "wasn't" },
+            { sentence: "The weather [ ___ ] good yesterday. It was sunny.", choices: ["was", "were", "is", "wasn't"], correct: "was" },
+            { sentence: "They [ ___ ] at school last Monday. It was a holiday.", choices: ["weren't", "were", "wasn't", "didn't"], correct: "weren't" },
+            { sentence: "[ ___ ] you late this morning? - No, I was on time.", choices: ["Were", "Was", "Did", "Are"], correct: "Were" }
         ],
-        // Lv 1 (World 2) : 中級 (前置詞、進行形、助動詞)
+        // World 2 (Unit 11: Past Simple 肯定文)
         [
-            { sentence: "I go to school [ ___ ] bus.", choices: ["in", "on", "by", "with"], correct: "by" },
-            { sentence: "He is [ ___ ] music now.", choices: ["listen", "listens", "listened", "listening"], correct: "listening" },
-            { sentence: "You [ ___ ] stop at the red light.", choices: ["must", "can", "may", "will"], correct: "must" },
-            { sentence: "I have [ ___ ] brother and two sisters.", choices: ["a", "an", "the", "some"], correct: "a" },
-            { sentence: "Let's [ ___ ] soccer after school.", choices: ["play", "plays", "playing", "played"], correct: "play" }
+            { sentence: "I [ ___ ] my teeth three times yesterday.", choices: ["cleaned", "cleans", "clean", "cleaning"], correct: "cleaned" },
+            { sentence: "The accident [ ___ ] last Sunday afternoon.", choices: ["happened", "happens", "happen", "was happened"], correct: "happened" },
+            { sentence: "We saw Alice in town, but we [ ___ ] goodbye.", choices: ["didn't say", "said", "say", "wasn't say"], correct: "didn't say" },
+            { sentence: "Mozart [ ___ ] more than 600 pieces of music.", choices: ["wrote", "write", "writes", "written"], correct: "wrote" }
         ],
-        // Lv 2 (World 3) : 上級 (過去形、不定詞、動名詞)
+        // World 3 (Unit 12: Past Simple 否定文・疑問文)
         [
-            { sentence: "She [ ___ ] an email yesterday.", choices: ["write", "writes", "writing", "wrote"], correct: "wrote" },
-            { sentence: "I want [ ___ ] a software engineer.", choices: ["be", "being", "to be", "been"], correct: "to be" },
-            { sentence: "Thank you for [ ___ ] me.", choices: ["help", "helps", "helped", "helping"], correct: "helping" },
-            { sentence: "I was born [ ___ ] October.", choices: ["at", "on", "in", "by"], correct: "in" },
-            { sentence: "Will you [ ___ ] me a favor?", choices: ["do", "make", "take", "give"], correct: "do" }
+            { sentence: "I didn't [ ___ ] TV yesterday. I read a book.", choices: ["watch", "watched", "watching", "watches"], correct: "watch" },
+            { sentence: "[ ___ ] you go out last night? - Yes, I went to the cinema.", choices: ["Did", "Were", "Was", "Do"], correct: "Did" },
+            { sentence: "The bed was uncomfortable, so I [ ___ ] sleep well.", choices: ["didn't", "wasn't", "don't", "couldn't"], correct: "didn't" },
+            { sentence: "What time [ ___ ] they arrive?", choices: ["did", "were", "was", "have"], correct: "did" }
         ],
-        // Lv 3 (World 4) : 難問 (比較、現在完了)
+        // World 4 (Unit 13: Past Continuous 過去進行形)
         [
-            { sentence: "This PC is [ ___ ] than that one.", choices: ["old", "older", "oldest", "more old"], correct: "older" },
-            { sentence: "He is the [ ___ ] player in our team.", choices: ["tall", "taller", "tallest", "most tall"], correct: "tallest" },
-            { sentence: "I have just [ ___ ] my homework.", choices: ["finish", "finishes", "finishing", "finished"], correct: "finished" },
-            { sentence: "Have you ever [ ___ ] to London?", choices: ["be", "was", "went", "been"], correct: "been" },
-            { sentence: "English is as [ ___ ] as Math for me.", choices: ["easy", "easier", "easiest", "easily"], correct: "easy" }
+            { sentence: "At 11:30 yesterday, she [ ___ ] working.", choices: ["was", "were", "did", "is"], correct: "was" },
+            { sentence: "What [ ___ ] you doing when the phone rang?", choices: ["were", "was", "did", "are"], correct: "were" },
+            { sentence: "It was raining, so we [ ___ ] go out.", choices: ["didn't", "wasn't", "weren't", "don't"], correct: "didn't" },
+            { sentence: "I saw you yesterday. You [ ___ ] waiting for a bus.", choices: ["were", "was", "did", "are"], correct: "were" }
         ],
-        // Lv 4 (World 5) : 超難問 (関係代名詞、受動態、仮定法など)
+        // World 5 (Unit 14: Past Simple vs Continuous 過去形と過去進行形)
         [
-            { sentence: "This is the file [ ___ ] he sent.", choices: ["who", "whose", "which", "what"], correct: "which" },
-            { sentence: "The boy [ ___ ] is running is Tom.", choices: ["who", "which", "whose", "whom"], correct: "who" },
-            { sentence: "This software was [ ___ ] by him.", choices: ["make", "makes", "making", "made"], correct: "made" },
-            { sentence: "If I [ ___ ] a bird, I would fly to you.", choices: ["am", "is", "were", "be"], correct: "were" },
-            { sentence: "I know a man [ ___ ] father is a doctor.", choices: ["who", "whose", "which", "whom"], correct: "whose" }
+            { sentence: "I [ ___ ] my finger while I was cooking dinner.", choices: ["cut", "was cutting", "cuts", "was cut"], correct: "cut" },
+            { sentence: "I was walking home when I [ ___ ] Dan.", choices: ["met", "was meeting", "meet", "meets"], correct: "met" },
+            { sentence: "We [ ___ ] TV when the phone rang.", choices: ["were watching", "watched", "watch", "was watching"], correct: "were watching" },
+            { sentence: "The sun was shining when I [ ___ ] up.", choices: ["woke", "was waking", "wake", "woken"], correct: "woke" }
+        ],
+        // World 6 (Unit 15: used to)
+        [
+            { sentence: "I [ ___ ] to play tennis a lot, but I don't play now.", choices: ["used", "use", "using", "was used"], correct: "used" },
+            { sentence: "He [ ___ ] have a car, but he sold it last year.", choices: ["used to", "used", "uses to", "was used to"], correct: "used to" },
+            { sentence: "Where did you [ ___ ] to live before you came here?", choices: ["use", "used", "using", "uses"], correct: "use" },
+            { sentence: "She didn't [ ___ ] to like tomatoes, but now she loves them.", choices: ["use", "used", "uses", "be used"], correct: "use" }
         ]
     ];
 
+    // 全6ワールド構成
     const WORLD_DATA = [
-        { num: "01", name: "BASE LAYER" }, { num: "02", name: "LOCAL NETWORK" },
-        { num: "03", name: "MAIN MAINFRAME" }, { num: "04", name: "DEEP SERVER" },
-        { num: "05", name: "CORE SINGULARITY" }
+        { num: "10", name: "WAS / WERE UNIT" }, 
+        { num: "11", name: "PAST SIMPLE (REG/IRREG)" },
+        { num: "12", name: "PAST SIMPLE (NEG/QUEST)" }, 
+        { num: "13", name: "PAST CONTINUOUS" },
+        { num: "14", name: "PAST VS CONTINUOUS" }, 
+        { num: "15", name: "USED TO SYSTEM" }
     ];
 
     const HINTS = [
         "タイピング中にキーを間違えるとシステムがダメージを受けます。正確な入力が必要です。",
-        "穴埋め問題（MISSING LINK）は、文章の前後関係をよく読んで正しいパーツを選択しましょう。",
+        "動詞の規則変化(-ed)か、不規則変化(went, sawなど)かを落ち着いて見極めましょう。",
+        "過去進行形(was/were + -ing)は「〜している最中だった」という状態を表します。",
         "ショップで『CAPACITY EXTEND』を行うと、最大HPが恒久的に増加し生存率が高まります。",
+        "『FIREWALL』スキルを強化すれば、エラー時の被ダメージを大幅に抑えることができます。",
+        "セクター05に潜むボスは膨大なHPを持っています。HPを満タンにして挑んでください。",
         "拠点に戻ったら、ログアウトする前に必ず『SAVE (セーブ)』を実行してデータを保存しましょう。"
     ];
 
-    let player = { gold: 0, worldIndex: 0, stageIndex: 1, hp: 100, maxHp: 100, skills: { atk: 0, def: 0, gold: 0 } };
-    let enemyHp = 100, enemyMaxHp = 100, isBoss = false;
-    let currentTask = null, targetWordObj = null, targetFillObj = null, typedLength = 0;
+    /* ===================================================
+        新設：ストーリー ＆ チュートリアル用データ
+    =================================================== */
+    const STORY_DATA = {
+        ja: {
+            title: "// SYSTEM INITIALIZATION (システム起動)",
+            text: "西暦2048年。\nネットワークの最深層にて、古代の英語文法プロトコルによって固く封印された失われた超データ遺産『CYBER RELIC』が発見された。\n\nキミは、このセキュリティを突破するために呼び出された凄腕のハッカー。\n暗号化された文法バグを修復し、すべてのデータを奪還せよ。\n\nシステムへのダイブを開始する――",
+            btn: "ターミナルへ進む >>"
+        },
+        en: {
+            title: "// SYSTEM INITIALIZATION",
+            text: "In the year 2048.\nDeep within the network, a lost super-data heritage 'CYBER RELIC' was discovered, locked tightly by ancient English grammar protocols.\n\nYou are an elite hacker called upon to bypass this security.\nFix the encrypted grammatical bugs and retrieve all the data.\n\nStarting dive into the system...",
+            btn: "ENTER TERMINAL >>"
+        }
+    };
 
+    const TUTORIAL_DATA = [
+        // World 1 (Unit 10)
+        {
+            ja: "【Unit 10: am/is/areの過去形】\nこのレイヤーでは、過去の状態や存在を表す 'was / were' をハックします。\n・主語が I / he / she / it ➡️ was (否定: wasn't)\n・主語が we / you / they ➡️ were (否定: weren't)\n\n【このゲームの戦い方】\n① タイピング：指定された過去形スペルをキーボードで正しく入力せよ！\n② 属性判別：表示された動詞が「規則変化」か「不規則変化」かを選べ！\n③ 穴埋め選択：文脈に合う正しい文法パーツのボタンをクリックせよ！",
+            en: "[Unit 10: Past of am/is/are]\nIn this layer, you will hack 'was / were' used for past states or existence.\n- Subject: I / he / she / it ➡️ was (Negative: wasn't)\n- Subject: we / you / they ➡️ were (Negative: weren't)\n\n[HOW TO BATTLE]\n1. Typing: Type the specified past tense spelling on your keyboard!\n2. Classification: Choose whether the verb is 'Regular' or 'Irregular'!\n3. Fill-in-the-blank: Click the button for the grammatically correct part!"
+        },
+        // World 2 (Unit 11)
+        {
+            ja: "【Unit 11: 過去形 肯定文】\nこのレイヤーでは、一般動詞の過去形（肯定文）をハックします。\n・規則動詞：語尾に '-ed' が付く変化（work ➡️ worked）\n・不規則動詞：形が特殊に変化するもの（go ➡️ went / buy ➡️ bought）\n\n★タイピング問題では、原形を正しい「過去形」に変えてスペル入力してください！",
+            en: "[Unit 11: Past Simple Affirmative]\nIn this layer, you will hack the past simple form of regular/irregular verbs.\n- Regular: Ends with '-ed' (work ➡️ worked)\n- Irregular: Changes in unique ways (go ➡️ went / buy ➡️ bought)\n\n*In typing tasks, type the correct 'past form' of the base verb!"
+        },
+        // World 3 (Unit 12)
+        {
+            ja: "【Unit 12: 過去形 否定文と疑問文】\n過去の否定文（〜しなかった）と疑問文（〜しましたか？）をハックします。\n・否定文 ➡️ didn't + 動詞の【原形】 (例: I didn't watch TV.)\n・疑問文 ➡️ Did + 主語 + 動詞の【原形】? (例: Did you go out?)\n\n★didn't や Did を使うときは、後ろの動詞が「過去形」ではなく「原形」に戻るルールが超重要です！",
+            en: "[Unit 12: Past Simple Negative & Questions]\nHack past negative sentences and questions.\n- Negative ➡️ didn't + [BASE] verb (e.g., I didn't watch TV.)\n- Questions ➡️ Did + subject + [BASE] verb? (e.g., Did you go out?)\n\n*Crucial Rule: When using didn't or Did, the verb must return to its 'base form', NOT the past form!"
+        },
+        // World 4 (Unit 13)
+        {
+            ja: "【Unit 13: 過去進行形】\n「過去のある時点で、ちょうど〜している最中だった」という動作の状態をハックします。\n・ルール ➡️ was / were + 動詞の-ing形\n・例: I was walking. (私は歩いている最中だった)\n\n主語が単数(I/he/she)なら was、複数(we/they)や you なら were を選び、進行形を完成させましょう。",
+            en: "[Unit 13: Past Continuous]\nHack actions that were in progress at a specific time in the past.\n- Rule ➡️ was / were + verb-ing\n- e.g., I was walking. / They were playing.\n\nUse 'was' for singular subjects (I/he/she) and 'were' for plural subjects (we/they) and 'you' to complete the continuous form."
+        },
+        // World 5 (Unit 14)
+        {
+            ja: "【Unit 14: 過去形 vs 過去進行形】\n過去形（起きた出来事）と、過去進行形（その時していた最中のこと）の組み合わせをハックします。\n・例: I cut my finger (過去形) while I was cooking dinner (過去進行形).\n\n「〜している最中に、〜が起きた」という前後の文脈を読み解き、どちらの時制が正しいかを見極めてください！",
+            en: "[Unit 14: Past Simple vs Continuous]\nHack the combination of Past Simple (completed action) and Past Continuous (action in progress).\n- e.g., I cut my finger (Simple) while I was cooking dinner (Continuous).\n\nAnalyze the context to determine whether the action was a continuous background or a sudden event!"
+        },
+        // World 6 (Unit 15)
+        {
+            ja: "【Unit 15: used to】\n「昔はよく〜していた（が、今はしていない）」という、過去の習慣や状態のシステムをハックします。\n・肯定文 ➡️ used to + 動詞の原形 (I used to play tennis.)\n・疑問文 ➡️ Did you use to...?\n・否定文 ➡️ didn't use to...\n\n★疑問文・否定文では 'used' ではなく 'use' （dが消える）になるバグトラップに注意してください！",
+            en: "[Unit 15: Used to]\nHack the system of past habits or states that are no longer true now.\n- Affirmative ➡️ used to + base verb (I used to play tennis.)\n- Questions ➡️ Did you use to...?\n- Negative ➡️ didn't use to...\n\n*Watch out! The 'd' disappears in questions and negatives, changing it to 'use to'!"
+        }
+    ];
+
+    // マイルド設定（HP150）を維持
+    let player = { lang: "ja", gold: 0, worldIndex: 0, stageIndex: 1, hp: 150, maxHp: 150, skills: { atk: 0, def: 0, gold: 0 } };
+    let enemyHp = 100, enemyMaxHp = 100, isBoss = false;
+    let currentTask = null, targetVerbObj = null, targetFillObj = null, typedLength = 0;
+
+    /* ==================================
+        セーブ・ロードシステム (手動専用・Base64)
+    ================================== */
     function manualSave() {
-        initAudio(); playSynth(1500, audioCtx.currentTime, 0.1, 'sine', 0.1);
-        localStorage.setItem('cyber_english_save_V5', btoa(encodeURIComponent(JSON.stringify(player))));
+        playSynth(1500, audioCtx.currentTime, 0.1, 'sine', 0.1);
+        const saveString = btoa(encodeURIComponent(JSON.stringify(player)));
+        localStorage.setItem('cyber_english_save_V5', saveString);
         alert("セーブ完了！\nシステムに現在の進行状況を保存しました。");
     }
 
+    function processLoadString(saveString) {
+        try {
+            const parsedData = JSON.parse(decodeURIComponent(atob(saveString)));
+            Object.assign(player, parsedData);
+            
+            if (player.lang === undefined) player.lang = "ja";
+            if (player.gold === undefined) player.gold = 0;
+            if (player.worldIndex === undefined) player.worldIndex = 0;
+            if (player.stageIndex === undefined) player.stageIndex = 1;
+            if (player.hp === undefined) player.hp = 150;
+            if (player.maxHp === undefined) player.maxHp = 150;
+            if (player.skills === undefined) player.skills = { atk: 0, def: 0, gold: 0 };
+            
+            return true;
+        } catch (e) {
+            alert("セーブデータが正しく読み込めませんでした。");
+            return false;
+        }
+    }
+
     function loadGameFromTitle() {
-        initAudio(); playSynth(1200, audioCtx.currentTime, 0.1, 'sine', 0.1);
+        playSynth(1200, audioCtx.currentTime, 0.1, 'sine', 0.1);
         const saveString = localStorage.getItem('cyber_english_save_V5');
+        
         if (saveString) {
-            try {
-                Object.assign(player, JSON.parse(decodeURIComponent(atob(saveString))));
-                updateTownUI(); changeScreen('screen-town');
+            if (processLoadString(saveString)) {
+                updateTownUI();
+                changeScreen('screen-town');
                 alert("保存されていたシステムデータをロードしました！");
-            } catch (e) { alert("セーブデータが正しく読み込めませんでした。"); }
-        } else { alert("セーブデータが見つかりませんでした。"); }
+            }
+        } else {
+            alert("セーブデータが見つかりませんでした。\n「NEW SYSTEM (初めから)」を選んで開始してください！");
+        }
     }
 
     function startNewGame() {
-        initAudio(); playSynth(1200, audioCtx.currentTime, 0.1, 'sine', 0.1);
-        player = { gold: 0, worldIndex: 0, stageIndex: 1, hp: 100, maxHp: 100, skills: { atk: 0, def: 0, gold: 0 } };
-        updateTownUI(); changeScreen('screen-town');
+        playSynth(1200, audioCtx.currentTime, 0.1, 'sine', 0.1);
+        changeScreen('screen-lang'); // 新規追加：まずは言語選択画面へ
     }
 
+    function selectLanguage(langCode) {
+        playSynth(1400, audioCtx.currentTime, 0.1, 'sine', 0.1);
+        player = { lang: langCode, gold: 0, worldIndex: 0, stageIndex: 1, hp: 150, maxHp: 150, skills: { atk: 0, def: 0, gold: 0 } };
+        
+        // ストーリー画面のテキストを言語に応じてセット
+        const data = STORY_DATA[langCode];
+        document.getElementById('story-title').innerText = data.title;
+        document.getElementById('story-text').innerText = data.text;
+        document.getElementById('story-btn').innerText = data.btn;
+        
+        changeScreen('screen-story'); // 新規追加：ストーリー画面へ
+    }
+
+    function exitStory() {
+        playSynth(1600, audioCtx.currentTime, 0.15, 'sine', 0.1);
+        updateTownUI();
+        changeScreen('screen-town'); // ストーリーを終えて拠点へ
+    }
+
+    /* ==================================
+        画面遷移とローディング
+    ================================== */
     function changeScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
+        
         if (screenId === 'screen-title') startBgm('title');
         else if (screenId === 'screen-town') { updateTownUI(); startBgm('town'); }
         else if (screenId === 'screen-shop') { updateShopUI(); startBgm('town'); }
@@ -428,28 +588,41 @@
     function prepareBattle() {
         if(player.hp <= 0) return;
         changeScreen('screen-loading');
+        
         document.getElementById('loading-hint').innerText = HINTS[Math.floor(Math.random() * HINTS.length)];
+        
         let bar = document.getElementById('loading-bar');
-        bar.style.transition = 'none'; bar.style.width = '0%';
-        setTimeout(() => { bar.style.transition = 'width 2.5s linear'; bar.style.width = '100%'; }, 50);
-        setTimeout(startBattle, 2800);
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.transition = 'width 2.0s linear';
+            bar.style.width = '100%';
+        }, 50);
+
+        setTimeout(startBattle, 2200);
     }
 
     function updateTownUI() {
         if (player.worldIndex >= WORLD_DATA.length) player.worldIndex = WORLD_DATA.length - 1;
         let w = WORLD_DATA[player.worldIndex];
-        document.getElementById('town-progress').innerText = `LAYER ${w.num}「${w.name}」 // ` + (player.stageIndex === 5 ? "WARNING: BOSS NODE" : `SECTOR 0${player.stageIndex}/05`);
+        let stageText = player.stageIndex === 5 ? "WARNING: BOSS NODE" : `SECTOR 0${player.stageIndex}/05`;
+        document.getElementById('town-progress').innerText = `UNIT ${w.num}「${w.name}」 // ${stageText}`;
         document.getElementById('town-gold').innerText = player.gold;
         document.getElementById('town-hp').innerText = `${player.hp} / ${player.maxHp}`;
         document.getElementById('btn-dive').disabled = (player.hp <= 0);
         if(player.hp <= 0) document.getElementById('town-progress').innerText = "SYSTEM CRITICAL // REPAIR REQUIRED";
     }
 
+    /* ==================================
+        ショップ & スキル
+    ================================== */
     function updateShopUI() { document.getElementById('shop-gold').innerText = player.gold; }
     function buyShopItem(type) {
-        initAudio();
-        if (type === 'heal' && player.gold >= 50 && player.hp < player.maxHp) { player.gold -= 50; player.hp = player.maxHp; playSynth(880, audioCtx.currentTime, 0.3, 'sine', 0.1); }
-        else if (type === 'maxhp' && player.gold >= 150) { player.gold -= 150; player.maxHp += 20; player.hp += 20; playSynth(1200, audioCtx.currentTime, 0.4, 'triangle', 0.1); }
+        if (type === 'heal' && player.gold >= 50 && player.hp < player.maxHp) {
+            player.gold -= 50; player.hp = player.maxHp; playSynth(880, audioCtx.currentTime, 0.3, 'sine', 0.1);
+        } else if (type === 'maxhp' && player.gold >= 150) {
+            player.gold -= 150; player.maxHp += 20; player.hp += 20; playSynth(1200, audioCtx.currentTime, 0.4, 'triangle', 0.1);
+        }
         updateShopUI();
     }
 
@@ -464,82 +637,127 @@
         });
     }
     function upgradeSkill(sk) {
-        initAudio(); let lv = player.skills[sk], cost = getSkillCost(lv);
-        if (player.gold >= cost && lv < 3) { player.gold -= cost; player.skills[sk]++; playSynth(1500, audioCtx.currentTime, 0.2, 'square', 0.08); updateSkillsUI(); }
+        let lv = player.skills[sk], cost = getSkillCost(lv);
+        if (player.gold >= cost && lv < 3) {
+            player.gold -= cost; player.skills[sk]++; playSynth(1500, audioCtx.currentTime, 0.2, 'square', 0.08);
+            updateSkillsUI();
+        }
     }
 
+    /* ==================================
+        バトルシステム
+    ================================== */
     function startBattle() {
         isBoss = (player.stageIndex === 5);
-        document.getElementById('enemy-sprite').className = isBoss ? "enemy-boss" : "enemy-minion";
-        document.getElementById('battle-header').className = isBoss ? "cyber-frame boss-alert" : "cyber-frame";
-        enemyMaxHp = 40 + (player.worldIndex * 60) + (player.stageIndex * 20);
-        if (isBoss) enemyMaxHp = Math.floor(enemyMaxHp * 2.5);
+        let spriteContainer = document.getElementById('enemy-sprite');
+        let headerFrame = document.getElementById('battle-header');
+        
+        if (isBoss) {
+            spriteContainer.className = "enemy-boss"; headerFrame.className = "cyber-frame boss-alert";
+        } else {
+            spriteContainer.className = "enemy-minion"; headerFrame.className = "cyber-frame";
+        }
+
+        enemyMaxHp = 30 + (player.worldIndex * 40) + (player.stageIndex * 15);
+        if (isBoss) enemyMaxHp = Math.floor(enemyMaxHp * 1.6);
         enemyHp = enemyMaxHp;
 
-        changeScreen('screen-battle'); updateBattleUI();
-        document.getElementById('message-box').innerHTML = isBoss ? "<span style='color:#ff3366;'>[WARNING] 重大な脅威を検知。戦闘を開始します。</span>" : "[SYSTEM] ウイルスプログラムを検知。迎撃シーケンスを開始します。";
-        setTimeout(nextTurn, 1500);
+        changeScreen('screen-battle');
+        updateBattleUI();
+        
+        // 各種コンテナを非表示
+        document.getElementById('typing-container').style.display = 'none';
+        document.getElementById('classify-container').style.display = 'none';
+        document.getElementById('fill-blank-container').style.display = 'none';
+        document.getElementById('tutorial-container').style.display = 'none';
+
+        // 新規追加：ワールドの最初（SECTOR 01）ならチュートリアル説明を入れる
+        if (player.stageIndex === 1) {
+            currentTask = 'tutorial';
+            const lang = player.lang || 'ja';
+            const titleText = lang === 'ja' ? `[ LAYER 0${player.worldIndex + 1} チュートリアルプロトコル ]` : `[ LAYER 0${player.worldIndex + 1} TUTORIAL PROTOCOL ]`;
+            const btnText = lang === 'ja' ? "HACKING START [了解]" : "BEGIN HACKING [OK]";
+            
+            document.getElementById('tutorial-title').innerText = titleText;
+            document.getElementById('tutorial-text').innerText = TUTORIAL_DATA[player.worldIndex][lang];
+            document.getElementById('tutorial-container').querySelector('.btn').innerText = btnText;
+            document.getElementById('tutorial-container').style.display = 'block';
+            
+            document.getElementById('message-box').innerHTML = lang === 'ja' 
+                ? "<span style='color:#ffff00;'>[SYSTEM] 新しい階層の文法セキュリティ解説を検出しました。確認してください。</span>"
+                : "<span style='color:#ffff00;'>[SYSTEM] New layer grammar tutorial detected. Please review it.</span>";
+        } else {
+            // セクター02以降は通常スタート
+            document.getElementById('message-box').innerHTML = isBoss 
+                ? (player.lang === 'en' ? "<span style='color:#ff3366;'>[WARNING] Grammar security core detected. Break the security.</span>" : "<span style='color:#ff3366;'>[WARNING] 文法セキュリティコアが出現。セキュリティプログラムを突破してください。</span>")
+                : (player.lang === 'en' ? "[SYSTEM] Past tense protocol detected. Initializing defense sequence." : "[SYSTEM] 過去時制プロトコルを検知。迎撃シーケンスを開始します。");
+            setTimeout(nextTurn, 1200);
+        }
     }
 
-    function updateBattleUI() {
-        let w = WORLD_DATA[player.worldIndex];
-        document.getElementById('battle-progress').innerText = isBoss ? `LAYER ${w.num} // BOSS` : `LAYER ${w.num} // SEC 0${player.stageIndex}`;
-        document.getElementById('player-hp').innerText = `${player.hp} / ${player.maxHp}`;
-        document.getElementById('enemy-hp').innerText = Math.ceil((enemyHp / enemyMaxHp) * 100);
+    // 新規追加：チュートリアルを閉じて戦闘開始
+    function closeTutorial() {
+        if (currentTask !== 'tutorial') return;
+        playSynth(1000, audioCtx.currentTime, 0.1, 'sine', 0.05);
+        document.getElementById('tutorial-container').style.display = 'none';
+        currentTask = null;
+        
+        document.getElementById('message-box').innerHTML = player.lang === 'en' 
+            ? "[SYSTEM] Tutorial acknowledged. Initializing hacking sequence."
+            : "[SYSTEM] チュートリアル確認。迎撃シーケンスを開始します。";
+        setTimeout(nextTurn, 1000);
     }
 
     function nextTurn() {
         if (enemyHp <= 0 || player.hp <= 0) return;
         
-        let wordPool = wordLevels[Math.min(player.worldIndex, wordLevels.length - 1)];
-        let fillPool = fillBlankLevels[Math.min(player.worldIndex, fillBlankLevels.length - 1)];
+        let poolIndex = Math.min(player.worldIndex, grammarFillBlankPool.length - 1);
+        let currentPool = grammarFillBlankPool[poolIndex];
         
-        // タスクを3種類の中からランダムに選択 (タイピング 33%, 判別 33%, 穴埋め 33%)
         let taskType = Math.random();
-        if (taskType < 0.33) {
-            targetWordObj = wordPool[Math.floor(Math.random() * wordPool.length)];
+        
+        if (taskType < 0.3) {
+            targetVerbObj = verbDataPool[Math.floor(Math.random() * verbDataPool.length)];
             startTypingTask();
-        } else if (taskType < 0.66) {
-            targetWordObj = wordPool[Math.floor(Math.random() * wordPool.length)];
+        } else if (taskType < 0.5) {
+            targetVerbObj = verbDataPool[Math.floor(Math.random() * verbDataPool.length)];
             startClassifyTask();
         } else {
-            targetFillObj = fillPool[Math.floor(Math.random() * fillPool.length)];
+            targetFillObj = currentPool[Math.floor(Math.random() * currentPool.length)];
             startFillBlankTask();
         }
     }
 
-    // --- タスク1：タイピング ---
     function startTypingTask() {
         currentTask = 'typing'; typedLength = 0;
         document.getElementById('classify-container').style.display = 'none';
         document.getElementById('fill-blank-container').style.display = 'none';
         document.getElementById('typing-container').style.display = 'block';
-        document.getElementById('message-box').innerText = ">> [TYPE CODE] ターゲットコードを正確にタイピングしてください。";
+        document.getElementById('message-box').innerText = `>> [TYPE PAST SIMPLE] 原形「${targetVerbObj.base}」の正しい過去形をタイピングしてください。`;
         renderTypingWord();
     }
+
     function renderTypingWord() {
-        const t = targetWordObj.en.substring(0, typedLength), u = targetWordObj.en.substring(typedLength);
+        const t = targetVerbObj.past.substring(0, typedLength), u = targetVerbObj.past.substring(typedLength);
         document.getElementById('typing-word').innerHTML = `<span class="typed">${t}</span><span class="untyped">${u}</span>`;
     }
 
-    // --- タスク2：品詞判別 ---
     function startClassifyTask() {
         currentTask = 'classify';
         document.getElementById('typing-container').style.display = 'none';
         document.getElementById('fill-blank-container').style.display = 'none';
         document.getElementById('classify-container').style.display = 'block';
-        document.getElementById('classify-word').innerText = targetWordObj.en.toUpperCase();
-        document.getElementById('message-box').innerText = ">> [CLASSIFY] 対象データの正しい品詞属性を選択してください。";
+        document.getElementById('classify-word').innerText = targetVerbObj.base.toUpperCase();
+        document.getElementById('message-box').innerText = ">> [CLASSIFY] この動詞の過去形変化は「規則変化」ですか？「不規則変化」ですか？";
     }
 
-    // --- タスク3：穴埋め問題 (MISSING LINK) ---
     function startFillBlankTask() {
         currentTask = 'fillblank';
         document.getElementById('typing-container').style.display = 'none';
         document.getElementById('classify-container').style.display = 'none';
         document.getElementById('fill-blank-container').style.display = 'block';
         
-        document.getElementById('message-box').innerText = ">> [MISSING LINK] 文章の欠落を修復するため、適切なデータを選択してください。";
+        document.getElementById('message-box').innerText = ">> [MISSING LINK] 文脈から空欄に入る正しい文法パーツを修復してください。";
         document.getElementById('fill-sentence').innerText = targetFillObj.sentence;
         
         let choicesHtml = '';
@@ -551,44 +769,41 @@
 
     function checkFillBlank(selectedChoice) {
         if (currentTask !== 'fillblank') return;
-        initAudio();
         if (selectedChoice === targetFillObj.correct) {
-            let dmg = 40 + (player.skills.atk * 12); // 文章問題は少しダメージが高め
-            dealDamage(dmg, "構文の修復に成功。クリティカルパケットを転送します。");
+            let dmg = 35 + (player.skills.atk * 12);
+            dealDamage(dmg, "文法パッチの適用に成功。クリティカルダメージ！");
         } else { triggerFeedbackError(); }
     }
 
     function checkClassification(selectedType) {
         if (currentTask !== 'classify') return;
-        initAudio();
-        if (targetWordObj.type === selectedType) {
-            let dmg = 30 + (player.skills.atk * 10);
-            dealDamage(dmg, "属性照合クリア。データクラッシュを実行します。");
+        if (targetVerbObj.type === selectedType) {
+            let dmg = 35 + (player.skills.atk * 12);
+            dealDamage(dmg, "動詞属性の一致を確認。シールド破壊パケットを転送。");
         } else { triggerFeedbackError(); }
     }
 
     window.addEventListener('keydown', (e) => {
         if (currentTask !== 'typing') return;
-        initAudio();
-        const key = e.key.toLowerCase(), nextChar = targetWordObj.en[typedLength].toLowerCase();
+        const key = e.key.toLowerCase(), nextChar = targetVerbObj.past[typedLength].toLowerCase();
+
         if (key === nextChar) {
             typedLength++; playSynth(1200, audioCtx.currentTime, 0.05, 'sine', 0.05); renderTypingWord();
-            if (typedLength === targetWordObj.en.length) {
-                let dmg = 20 + (player.skills.atk * 8);
-                dealDamage(dmg, "タイピング完了。攻撃パケットを転送します。");
+            if (typedLength === targetVerbObj.past.length) {
+                let dmg = 25 + (player.skills.atk * 10);
+                dealDamage(dmg, "正しい時制スペルを確認。パルスレーザー発射。");
             }
         } else if (e.key.length === 1 && e.key !== " ") { triggerFeedbackError(); }
     });
 
     function triggerFeedbackError() {
-        initAudio();
-        let dmg = isBoss ? 25 : 15;
+        let dmg = isBoss ? 18 : 10;
         let reduction = player.skills.def * 0.15;
         dmg = Math.max(1, Math.floor(dmg * (1 - reduction)));
 
-        player.hp -= dmg; if(player.hp < 0) player.hp = 0; updateBattleUI();
-        playSynth(150, audioCtx.currentTime, 0.3, 'sawtooth', 0.2);
-        document.getElementById('message-box').innerHTML = `<span style='color:#ff3366;'>[ERROR] 入力ミス。システムが ${dmg} のダメージを受けました。</span>`;
+        player.hp -= dmg; if(player.hp < 0) player.hp = 0;
+        updateBattleUI(); playSynth(150, audioCtx.currentTime, 0.3, 'sawtooth', 0.2);
+        document.getElementById('message-box').innerHTML = `<span style='color:#ff3366;'>[ERROR] 構文解釈エラー。端末が ${dmg} のダメージを受けました。</span>`;
 
         if (player.hp <= 0) {
             setTimeout(() => {
@@ -596,15 +811,16 @@
                 document.getElementById('classify-container').style.display = 'none';
                 document.getElementById('fill-blank-container').style.display = 'none';
                 document.getElementById('message-box').innerHTML = "<span style='color:#ff3366;'>[CRITICAL] システムダウン。ベースキャンプへ強制転送します。</span>";
-                setTimeout(() => { changeScreen('screen-town'); }, 3000);
+                setTimeout(() => { changeScreen('screen-town'); }, 2500);
             }, 1000);
-        } else { currentTask = null; setTimeout(nextTurn, 1500); }
+        } else {
+            currentTask = null; setTimeout(nextTurn, 1200);
+        }
     }
 
     function dealDamage(amount, msg) {
-        initAudio();
-        currentTask = null; enemyHp -= amount; if (enemyHp < 0) enemyHp = 0; updateBattleUI();
-        playSynth(600, audioCtx.currentTime, 0.1, 'square', 0.1);
+        currentTask = null; enemyHp -= amount; if (enemyHp < 0) enemyHp = 0;
+        updateBattleUI(); playSynth(600, audioCtx.currentTime, 0.1, 'square', 0.1);
         document.getElementById('message-box').innerText = `${msg}\n対象に ${amount} のダメージを与えました。`;
 
         if (enemyHp <= 0) {
@@ -612,7 +828,7 @@
             document.getElementById('classify-container').style.display = 'none';
             document.getElementById('fill-blank-container').style.display = 'none';
             
-            let reward = 50 + (player.worldIndex * 40) + (player.stageIndex * 10);
+            let reward = 70 + (player.worldIndex * 50) + (player.stageIndex * 15);
             if(isBoss) reward *= 2;
             reward = Math.floor(reward * (1 + player.skills.gold * 0.25));
             
@@ -623,20 +839,32 @@
                 player.stageIndex = 1; player.worldIndex++;
                 document.getElementById('message-box').innerHTML += `<br><span style='color:#ffffff;'>>> LAYER CLEARED: 次の階層へのアクセス権限を取得しました。</span>`;
             } else { player.stageIndex++; }
-            setTimeout(() => { changeScreen('screen-town'); }, 3000);
-        } else { setTimeout(nextTurn, 1200); }
+
+            setTimeout(() => { changeScreen('screen-town'); }, 2500);
+        } else { setTimeout(nextTurn, 1000); }
+    }
+
+    function updateBattleUI() {
+        if (!isBoss) {
+            document.getElementById('player-hp').innerText = `${player.hp} / ${player.maxHp}`;
+            let pct = Math.floor((enemyHp / enemyMaxHp) * 100);
+            document.getElementById('enemy-hp').innerText = `${pct} %`;
+            let w = WORLD_DATA[player.worldIndex];
+            document.getElementById('battle-progress').innerText = `UNIT ${w.num} // SECTOR 0${player.stageIndex}`;
+        } else {
+            document.getElementById('player-hp').innerText = `${player.hp} / ${player.maxHp}`;
+            let pct = Math.floor((enemyHp / enemyMaxHp) * 100);
+            document.getElementById('enemy-hp').innerText = `CRITICAL: ${pct} %`;
+            let w = WORLD_DATA[player.worldIndex];
+            document.getElementById('battle-progress').innerText = `UNIT ${w.num} // BOSS CORE`;
+        }
     }
 
     /* ==================================
         BGM & 音声システム
     ================================== */
     let audioCtx = null, bgmTimer = null, bgmType = null, nextNoteTime = 0, beatCount = 0;
-    
-    function initAudio() { 
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    }
-
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
     function playSynth(freq, startTime, duration, type = 'sine', gainVal = 0.05) {
         if (!audioCtx) return;
         let osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
@@ -648,16 +876,13 @@
     }
 
     function startBgm(type) {
-        initAudio(); if (bgmType === type) return; bgmType = type; beatCount = 0; 
-        if (audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
+        initAudio(); if (bgmType === type) return;
+        bgmType = type; beatCount = 0; nextNoteTime = audioCtx.currentTime + 0.05;
         if (bgmTimer) clearTimeout(bgmTimer); runScheduler();
     }
 
     function runScheduler() {
-        if (!bgmType || !audioCtx) return;
-        if (audioCtx.state === 'suspended') { bgmTimer = setTimeout(runScheduler, 50); return; }
-        if (nextNoteTime < audioCtx.currentTime) nextNoteTime = audioCtx.currentTime + 0.05;
-
+        if (!bgmType) return;
         let bpm = 120; if (bgmType === 'battle') bpm = 145; if (bgmType === 'boss') bpm = 160;
         let beatTime = 60 / bpm;
         while (nextNoteTime < audioCtx.currentTime + 0.1) {
